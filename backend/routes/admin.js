@@ -334,7 +334,7 @@ router.get("/tables", async (req, res) => {
       success: true,
       tables,
       qrcodes,
-      restaurantName: restaurant ? restaurant.name : "Restaurant"
+      restaurant: restaurant ? { name: restaurant.name, address: restaurant.address, phone: restaurant.phone } : null
     });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch tables" });
@@ -521,7 +521,7 @@ router.get("/orders", async (req, res) => {
     return res.json({
       success: true,
       data: orders,
-      restaurantName: restaurant ? restaurant.name : "Restaurant Console"
+      restaurant: restaurant ? { name: restaurant.name, address: restaurant.address, phone: restaurant.phone } : null
     });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch orders" });
@@ -558,6 +558,17 @@ router.patch("/orders", async (req, res) => {
     return res.json({ success: true, data: updated });
   } catch (error) {
     return res.status(500).json({ error: "Failed to update order" });
+  }
+});
+
+// 8. RESTAURANT DETAILS
+router.get("/restaurant-info", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findById(req.user.restaurantId);
+    if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+    return res.json({ success: true, data: restaurant });
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to fetch restaurant details" });
   }
 });
 
