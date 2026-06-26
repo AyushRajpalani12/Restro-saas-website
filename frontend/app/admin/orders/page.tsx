@@ -15,6 +15,7 @@ import {
   Ban,
   Loader2,
   DollarSign,
+  Printer,
 } from "lucide-react";
 import Card from "@/components/ui/card";
 import Button from "@/components/ui/button";
@@ -57,7 +58,7 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState<Order["status"] | "All">("All");
 
   // Query live orders
-  const { data: response, isLoading } = useQuery<{ success: boolean; data: Order[] }>({
+  const { data: response, isLoading } = useQuery<{ success: boolean; data: Order[]; restaurantName?: string }>({
     queryKey: ["admin", "orders", activeTab],
     queryFn: () => {
       const statusParam = activeTab === "All" ? "" : `?status=${activeTab}`;
@@ -155,6 +156,202 @@ export default function OrdersPage() {
 
   const handleUpdatePayment = (id: string, paymentStatus: Order["paymentStatus"]) => {
     updateOrderMutation.mutate({ id, paymentStatus });
+  };
+
+  const handlePrintReceipt = (order: Order) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const restName = response?.restaurantName || "Our Restaurant";
+
+    let itemsHtml = "";
+    order.items.forEach((item) => {
+      const addonsText = item.selectedAddons?.length > 0 
+        ? `<div class="item-addons">+ ${item.selectedAddons.map(a => a.name).join(", ")}</div>` 
+        : "";
+      const variantText = item.selectedVariant ? `<div class="item-variant">Portion: ${item.selectedVariant}</div>` : "";
+      
+      itemsHtml += `
+        <tr class="item-row">
+          <td class="item-name-cell">
+            <span class="item-qty">${item.quantity}x</span> ${item.name}
+            ${variantText}
+            ${addonsText}
+          </td>
+          <td class="item-price-cell">₹${item.price}</td>
+          <td class="item-total-cell">₹${item.price * item.quantity}</td>
+        </tr>
+      `;
+    });
+
+    const discountRow = order.subtotal > order.total 
+      ? `
+        <div class="summary-row">
+          <span>Discount:</span>
+          <span>- ₹${order.subtotal - order.total}</span>
+        </div>
+      `
+      : "";
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Receipt - Order #${order._id.slice(-6).toUpperCase()}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: 'Courier Prime', monospace;
+              color: #000000;
+              background-color: #ffffff;
+              font-size: 14px;
+              width: 300px;
+              box-sizing: border-box;
+            }
+            .receipt-header {
+              text-align: center;
+              margin-bottom: 15px;
+            }
+            .restaurant-name {
+              font-size: 18px;
+              font-weight: 700;
+              text-transform: uppercase;
+              margin-bottom: 5px;
+            }
+            .info-line {
+              margin-bottom: 3px;
+              font-size: 11px;
+            }
+            .divider {
+              border-top: 1px dashed #000;
+              margin: 10px 0;
+            }
+            .order-meta {
+              font-size: 12px;
+              line-height: 1.4;
+              margin-bottom: 10px;
+            }
+            .items-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 10px 0;
+              font-size: 13px;
+            }
+            .item-row td {
+              padding: 4px 0;
+              vertical-align: top;
+            }
+            .item-name-cell {
+              text-align: left;
+            }
+            .item-qty {
+              font-weight: bold;
+            }
+            .item-variant, .item-addons {
+              font-size: 11px;
+              color: #555;
+              padding-left: 20px;
+            }
+            .item-price-cell {
+              text-align: right;
+              width: 60px;
+            }
+            .item-total-cell {
+              text-align: right;
+              width: 70px;
+            }
+            .summary-section {
+              margin: 10px 0;
+              line-height: 1.5;
+            }
+            .summary-row {
+              display: flex;
+              justify-content: space-between;
+            }
+            .total-row {
+              font-weight: 700;
+              font-size: 16px;
+              margin-top: 5px;
+              border-top: 1px dashed #000;
+              padding-top: 5px;
+            }
+            .payment-info {
+              font-size: 12px;
+              margin: 10px 0;
+              text-align: center;
+            }
+            .footer-msg {
+              text-align: center;
+              font-size: 12px;
+              margin-top: 20px;
+              line-height: 1.4;
+            }
+            @media print {
+              body {
+                padding: 10px;
+                width: 100%;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-header">
+            <div class="restaurant-name">${restName.toUpperCase()}</div>
+            <div class="info-line">Dine-in Order Receipt</div>
+          </div>
+          <div class="divider"></div>
+          <div class="order-meta">
+            <div><strong>ORDER ID:</strong> #${order._id.slice(-6).toUpperCase()}</div>
+            <div><strong>TABLE:</strong> Table ${order.tableId?.tableNumber || "N/A"}</div>
+            <div><strong>DATE:</strong> ${new Date(order.createdAt).toLocaleDateString()}</div>
+            <div><strong>TIME:</strong> ${new Date(order.createdAt).toLocaleTimeString()}</div>
+          </div>
+          <div class="divider"></div>
+          <table class="items-table">
+            <thead>
+              <tr style="border-bottom: 1px dashed #000;">
+                <th style="text-align: left; padding-bottom: 4px;">Item</th>
+                <th style="text-align: right; width: 60px; padding-bottom: 4px;">Price</th>
+                <th style="text-align: right; width: 70px; padding-bottom: 4px;">Amt</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+          <div class="divider"></div>
+          <div class="summary-section">
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span>₹${order.subtotal}</span>
+            </div>
+            ${discountRow}
+            <div class="summary-row total-row">
+              <span>TOTAL DUE:</span>
+              <span>₹${order.total}</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="payment-info">
+            <div><strong>Payment Method:</strong> ${order.paymentMethod}</div>
+            <div><strong>Payment Status:</strong> ${order.paymentStatus.toUpperCase()}</div>
+          </div>
+          <div class="divider"></div>
+          <div class="footer-msg">
+            <div>Thank you for dining with us!</div>
+            <div style="font-size: 10px; margin-top: 5px;">Powered by Restro SaaS</div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 100);
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const tabs: Array<Order["status"] | "All"> = ["All", "Pending", "Preparing", "Ready", "Completed", "Cancelled"];
@@ -295,6 +492,14 @@ export default function OrdersPage() {
 
                   {/* Actions buttons */}
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-900/60 justify-end">
+                    <Button
+                      size="sm"
+                      onClick={() => handlePrintReceipt(order)}
+                      className="bg-slate-900 border border-slate-800 hover:bg-slate-850 text-slate-300 text-[11px] px-3.5 py-1.5 h-auto flex items-center gap-1"
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                      Print Bill
+                    </Button>
                     {order.status === "Pending" && (
                       <Button
                         size="sm"
