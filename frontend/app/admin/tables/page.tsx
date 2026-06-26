@@ -30,7 +30,7 @@ export default function TablesPage() {
   const [viewingTable, setViewingTable] = useState<{ number: string; qrUrl: string } | null>(null);
 
   // Queries
-  const { data: response, isLoading } = useQuery<{ success: boolean; tables: Table[]; qrcodes: QRCode[]; restaurantName?: string }>({
+  const { data: response, isLoading } = useQuery<{ success: boolean; tables: Table[]; qrcodes: QRCode[]; restaurant?: { name: string } }>({
     queryKey: ["admin", "tables"],
     queryFn: () => apiFetch("/api/admin/tables"),
   });
@@ -91,7 +91,7 @@ export default function TablesPage() {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const restName = response?.restaurantName || "Our Restaurant";
+    const restName = response?.restaurant?.name || "Our Restaurant";
 
     printWindow.document.write(`
       <html>
@@ -215,7 +215,7 @@ export default function TablesPage() {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const restName = response?.restaurantName || "Our Restaurant";
+    const restName = response?.restaurant?.name || "Our Restaurant";
     
     let cardsHtml = "";
     tables.forEach((table) => {
@@ -531,7 +531,7 @@ export default function TablesPage() {
             <div className="pt-2 text-center space-y-4">
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">
-                  {response?.restaurantName || "Our Restaurant"}
+                  {response?.restaurant?.name || "Our Restaurant"}
                 </p>
                 <h3 className="text-2xl font-black text-white mt-1">TABLE {viewingTable.number}</h3>
               </div>

@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut as nextSignOut } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
+import apiFetch from "@/lib/api";
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -26,6 +28,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const { data: restaurantResponse } = useQuery<{ success: boolean; data: { name: string } }>({
+    queryKey: ["admin", "restaurant-info"],
+    queryFn: () => apiFetch("/api/admin/restaurant-info"),
+    enabled: status === "authenticated",
+  });
+
+  const restaurantName = restaurantResponse?.data?.name || "Admin Console";
 
   if (status === "loading") {
     return (
@@ -69,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             R
           </div>
           <div>
-            <h1 className="font-extrabold text-white text-lg tracking-tight">Admin Console</h1>
+            <h1 className="font-extrabold text-white text-lg tracking-tight truncate max-w-[150px]">{restaurantName}</h1>
             <p className="text-xs text-orange-500/85 font-semibold uppercase tracking-wider">Tenant Node</p>
           </div>
         </div>
@@ -121,7 +131,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-bold text-lg shadow-sm">
             R
           </div>
-          <span className="font-extrabold text-white text-base tracking-tight">Admin Console</span>
+          <span className="font-extrabold text-white text-base tracking-tight">{restaurantName}</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

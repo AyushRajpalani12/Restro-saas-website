@@ -58,7 +58,7 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState<Order["status"] | "All">("All");
 
   // Query live orders
-  const { data: response, isLoading } = useQuery<{ success: boolean; data: Order[]; restaurantName?: string }>({
+  const { data: response, isLoading } = useQuery<{ success: boolean; data: Order[]; restaurant?: { name: string; address?: string; phone?: string } }>({
     queryKey: ["admin", "orders", activeTab],
     queryFn: () => {
       const statusParam = activeTab === "All" ? "" : `?status=${activeTab}`;
@@ -162,7 +162,10 @@ export default function OrdersPage() {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const restName = response?.restaurantName || "Our Restaurant";
+    const restInfo = response?.restaurant;
+    const restName = restInfo?.name || "Our Restaurant";
+    const restAddress = restInfo?.address || "";
+    const restPhone = restInfo?.phone || "";
 
     let itemsHtml = "";
     order.items.forEach((item) => {
@@ -298,7 +301,9 @@ export default function OrdersPage() {
         <body>
           <div class="receipt-header">
             <div class="restaurant-name">${restName.toUpperCase()}</div>
-            <div class="info-line">Dine-in Order Receipt</div>
+            ${restAddress ? `<div class="info-line" style="font-size: 11px; margin-bottom: 2px;">${restAddress}</div>` : ""}
+            ${restPhone ? `<div class="info-line" style="font-size: 11px; margin-bottom: 2px;">Contact: ${restPhone}</div>` : ""}
+            <div class="info-line" style="margin-top: 5px; font-weight: bold;">Dine-in Order Receipt</div>
           </div>
           <div class="divider"></div>
           <div class="order-meta">
