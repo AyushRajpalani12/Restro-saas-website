@@ -8,7 +8,7 @@ export const Card: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className
     {children}
   </div>
 );
-
+// s;jfb;sfgb;/asjb
 export const CardHeader: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className = "", children, ...props }) => (
   <div className={`p-6 border-b border-slate-800/60 ${className}`} {...props}>
     {children}
