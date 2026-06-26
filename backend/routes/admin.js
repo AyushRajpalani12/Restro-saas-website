@@ -516,7 +516,13 @@ router.get("/orders", async (req, res) => {
       .populate({ path: "items", populate: { path: "menuItemId" } })
       .populate("tableId")
       .sort({ createdAt: -1 });
-    return res.json({ success: true, data: orders });
+
+    const restaurant = await Restaurant.findById(req.user.restaurantId);
+    return res.json({
+      success: true,
+      data: orders,
+      restaurantName: restaurant ? restaurant.name : "Restaurant Console"
+    });
   } catch (error) {
     return res.status(500).json({ error: "Failed to fetch orders" });
   }

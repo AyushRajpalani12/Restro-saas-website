@@ -129,7 +129,7 @@ router.post("/orders", async (req, res) => {
     const taxableAmount = Math.max(0, subtotal - discount);
     const cgst = 0; // Removed GST tax for now
     const sgst = 0; // Removed GST tax for now
-    const serviceCharge = (taxableAmount * serviceChargeRate) / 100;
+    const serviceCharge = 0; // Removed Service Charge for now
     const total = taxableAmount + cgst + sgst + serviceCharge;
 
     const order = new Order({
