@@ -115,18 +115,8 @@ export default function OrdersPage() {
       queryClient.invalidateQueries({ queryKey: ["admin", "orders"] });
     });
 
-    // Listen for customer waiter calls
-    socket.on("waiter-called", (data: any) => {
-      playNotificationChime();
-      toast.success(`🆘 Table ${data.tableNumber} is calling for assistance!`, {
-        duration: 8000,
-        icon: "💁",
-      });
-    });
-
     return () => {
       socket.off("order-received");
-      socket.off("waiter-called");
     };
   }, [socket, queryClient]);
 

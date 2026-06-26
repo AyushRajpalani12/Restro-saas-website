@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut as nextSignOut } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import apiFetch from "@/lib/api";
+import useSocket from "@/hooks/useSocket";
+import toast from "react-hot-toast";
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -20,6 +22,8 @@ import {
   X,
   ShieldCheck,
   User,
+  Bell,
+  Check,
 } from "lucide-react";
 import Button from "@/components/ui/button";
 
@@ -36,6 +40,64 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   });
 
   const restaurantName = restaurantResponse?.data?.name || "Admin Console";
+
+  const branchId = (session?.user as any)?.branchId;
+  const [activeCalls, setActiveCalls] = useState<Array<{ id: string; tableNumber: string; time: string }>>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const socket = useSocket(branchId);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("waiter-called", (data: any) => {
+      // Play high pitch bell sound
+      try {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); // B5 note
+        osc.frequency.exponentialRampToValueAtTime(1318.51, audioCtx.currentTime + 0.15); // E6
+
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.0);
+
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 1.0);
+      } catch (e) {
+        console.warn("Autoplay audio blocked:", e);
+      }
+
+      toast(`🛎️ Table ${data.tableNumber} needs assistance!`, {
+        icon: "💁",
+        style: {
+          background: "#ea580c",
+          color: "#fff",
+        },
+      });
+
+      setActiveCalls((prev) => {
+        if (prev.some((c) => c.tableNumber === data.tableNumber)) return prev;
+        return [
+          {
+            id: Math.random().toString(),
+            tableNumber: data.tableNumber,
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+          ...prev,
+        ];
+      });
+    });
+
+    return () => {
+      socket.off("waiter-called");
+    };
+  }, [socket]);
 
   if (status === "loading") {
     return (
@@ -179,6 +241,66 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content Area */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl mx-auto w-full">
+        {/* Top Navbar Header */}
+        <div className="flex justify-end items-center gap-4 mb-6 pb-4 border-b border-slate-900/40 relative">
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="bg-slate-900 border border-slate-850 hover:bg-slate-850 p-2.5 rounded-xl text-slate-400 hover:text-white transition-all shadow-md relative cursor-pointer"
+            >
+              <Bell className="h-5 w-5" />
+              {activeCalls.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-950 animate-bounce">
+                  {activeCalls.length}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown Menu */}
+            {showDropdown && (
+              <div className="absolute right-0 mt-2.5 w-72 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-4 space-y-3 animate-in fade-in-50 slide-in-from-top-3 duration-150">
+                <div className="flex justify-between items-center border-b border-slate-850 pb-2">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Waiter Calls</h4>
+                  {activeCalls.length > 0 && (
+                    <button
+                      onClick={() => setActiveCalls([])}
+                      className="text-[10px] font-bold text-orange-500 hover:underline cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {activeCalls.length === 0 ? (
+                    <p className="text-xs text-slate-500 py-4 text-center">No active service calls.</p>
+                  ) : (
+                    activeCalls.map((call) => (
+                      <div
+                        key={call.id}
+                        className="flex justify-between items-center bg-slate-950/60 border border-slate-850/50 p-2.5 rounded-xl text-xs gap-3"
+                      >
+                        <div className="space-y-0.5">
+                          <p className="font-extrabold text-white">Table {call.tableNumber}</p>
+                          <p className="text-[9px] text-slate-500 font-semibold">Requested: {call.time}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setActiveCalls((prev) => prev.filter((c) => c.id !== call.id));
+                            toast.success(`Cleared Table ${call.tableNumber} alert`);
+                          }}
+                          className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 p-1.5 rounded-lg border border-emerald-500/25 transition-colors cursor-pointer"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         {children}
       </main>
     </div>

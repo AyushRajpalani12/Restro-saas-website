@@ -15,6 +15,7 @@ import {
   DollarSign,
   Receipt,
   HelpCircle,
+  Star,
 } from "lucide-react";
 import Card from "@/components/ui/card";
 import Button from "@/components/ui/button";
@@ -32,6 +33,8 @@ interface OrderItem {
 
 interface Order {
   _id: string;
+  restaurantId: string;
+  branchId: string;
   items: OrderItem[];
   subtotal: number;
   cgst: number;
@@ -41,6 +44,8 @@ interface Order {
   status: "Pending" | "Preparing" | "Ready" | "Completed" | "Cancelled";
   paymentStatus: "Pending" | "Paid" | "Failed";
   paymentMethod: string;
+  customerName?: string;
+  customerPhone?: string;
   createdAt: string;
 }
 
@@ -51,6 +56,10 @@ export default function OrderTrackingPage({
 }) {
   const queryClient = useQueryClient();
   const { restaurantSlug, tableNumber, orderId } = use(params);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   // Query order details
   const { data: response, isLoading, error } = useQuery<{ success: boolean; data: Order }>({
@@ -180,8 +189,8 @@ export default function OrderTrackingPage({
           </p>
         </div>
 
-        {/* Stepper progress (Only if not cancelled) */}
-        {order.status !== "Cancelled" && (
+        {/* Stepper progress (Only if not cancelled and not completed) */}
+        {order.status !== "Cancelled" && order.status !== "Completed" && (
           <Card className="p-6 bg-slate-900/20 border border-slate-850 backdrop-blur-xl">
             <div className="relative flex flex-col gap-6">
               {/* Stepper Line */}
@@ -229,6 +238,101 @@ export default function OrderTrackingPage({
                 );
               })}
             </div>
+          </Card>
+        )}
+
+        {/* Feedback Card (Only if Completed) */}
+        {order.status === "Completed" && (
+          <Card className="p-6 bg-slate-900/40 border border-orange-500/25 backdrop-blur-xl shadow-lg shadow-orange-500/5 text-center space-y-5 animate-in fade-in duration-300">
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold text-white">How was your dining experience?</h3>
+              <p className="text-xs text-slate-400">
+                Hey {order.customerName || "there"}, please rate your meal and service.
+              </p>
+            </div>
+
+            {!feedbackSubmitted ? (
+              <div className="space-y-4">
+                {/* Stars */}
+                <div className="flex items-center justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="p-1 focus:outline-none transition-transform active:scale-[0.85] cursor-pointer"
+                    >
+                      <Star
+                        className={`h-8 w-8 transition-colors ${
+                          star <= (hoverRating || rating)
+                            ? "fill-amber-500 text-amber-500"
+                            : "text-slate-700"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Textarea */}
+                <div className="text-left space-y-1.5">
+                  <textarea
+                    placeholder="Write a message or suggestion (Optional)..."
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-205 placeholder-slate-600 focus:outline-none focus:border-orange-500/50 resize-none min-h-[70px]"
+                    rows={3}
+                  />
+                </div>
+
+                <Button
+                  onClick={async () => {
+                    if (!order) return;
+                    if (rating === 0) {
+                      toast.error("Please select a star rating");
+                      return;
+                    }
+                    try {
+                      await apiFetch("/api/customer/feedback", {
+                        method: "POST",
+                        body: JSON.stringify({
+                          restaurantId: order.restaurantId,
+                          branchId: order.branchId,
+                          orderId: order._id,
+                          customerName: order.customerName || "Customer",
+                          customerPhone: order.customerPhone || "",
+                          ratingService: rating,
+                          ratingFood: rating,
+                          ratingAmbiance: rating,
+                          ratingOverall: rating,
+                          comment: feedbackText,
+                        }),
+                      });
+                      setFeedbackSubmitted(true);
+                      toast.success("Thank you for your feedback!");
+                    } catch (err: any) {
+                      toast.error(err.message || "Failed to submit feedback");
+                    }
+                  }}
+                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-2 rounded-xl text-xs shadow-md shadow-orange-500/10"
+                >
+                  Submit Review
+                </Button>
+              </div>
+            ) : (
+              <div className="py-4 space-y-3 animate-in zoom-in-95 duration-200">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-white">Feedback Submitted!</p>
+                  <p className="text-xs text-slate-400">
+                    We appreciate your response. Have a great day!
+                  </p>
+                </div>
+              </div>
+            )}
           </Card>
         )}
 

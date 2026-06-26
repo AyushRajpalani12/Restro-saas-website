@@ -65,6 +65,7 @@ interface Restaurant {
   _id: string;
   name: string;
   slug: string;
+  branchId?: string;
 }
 
 interface Theme {
@@ -118,7 +119,7 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
   // Query menu
   const { data: menuResponse, isLoading, error } = useQuery<MenuResponse>({
     queryKey: ["customer", "menu", restaurantSlug],
-    queryFn: () => apiFetch(`/api/customer/menu?slug=${restaurantSlug}`),
+    queryFn: () => apiFetch(`/api/customer/menu?slug=${restaurantSlug}&tableNumber=${tableNumber}`),
   });
 
   const restaurant = menuResponse?.restaurant;
