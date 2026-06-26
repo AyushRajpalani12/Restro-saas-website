@@ -17,11 +17,19 @@ const Lead = require("../models/Lead");
 // 1. RESOLVE RESTAURANT SLUG & MENU
 router.get("/menu", async (req, res) => {
   try {
-    const { slug } = req.query;
+    const { slug, tableNumber } = req.query;
     if (!slug) return res.status(400).json({ error: "Slug is required" });
 
     const restaurant = await Restaurant.findOne({ slug, isActive: true, isSuspended: false });
     if (!restaurant) return res.status(404).json({ error: "Restaurant not found or inactive" });
+
+    let branchId = null;
+    if (tableNumber) {
+      const table = await Table.findOne({ restaurantId: restaurant._id, tableNumber, isActive: true });
+      if (table) {
+        branchId = table.branchId;
+      }
+    }
 
     const theme = await Theme.findOne({ restaurantId: restaurant._id }) || {
       primaryColor: "#ea580c",
@@ -35,8 +43,14 @@ router.get("/menu", async (req, res) => {
       .populate("addons")
       .sort({ name: 1 });
 
-    return res.json({ success: true, restaurant, theme, categories, menuItems });
+    const restaurantObj = restaurant.toObject();
+    if (branchId) {
+      restaurantObj.branchId = branchId;
+    }
+
+    return res.json({ success: true, restaurant: restaurantObj, theme, categories, menuItems });
   } catch (error) {
+    console.error("Load menu error:", error);
     return res.status(500).json({ error: "Failed to load menu" });
   }
 });
@@ -241,6 +255,51 @@ router.post("/leads", async (req, res) => {
   } catch (error) {
     console.error("Lead submission error:", error);
     return res.status(500).json({ error: "Failed to submit inquiry" });
+  }
+});
+
+// 6. SUBMIT FEEDBACK
+router.post("/feedback", async (req, res) => {
+  try {
+    const {
+      restaurantId,
+      branchId,
+      orderId,
+      customerName,
+      customerPhone,
+      ratingService,
+      ratingFood,
+      ratingAmbiance,
+      ratingOverall,
+      comment,
+    } = req.body;
+
+    if (!restaurantId || !branchId || !customerName || !ratingOverall) {
+      return res.status(400).json({ error: "Missing required feedback fields" });
+    }
+
+    const Feedback = require("../models/Feedback");
+    const feedback = await Feedback.create({
+      restaurantId,
+      branchId,
+      orderId,
+      customerName,
+      customerPhone,
+      ratingService: ratingService || ratingOverall,
+      ratingFood: ratingFood || ratingOverall,
+      ratingAmbiance: ratingAmbiance || ratingOverall,
+      ratingOverall,
+      comment,
+    });
+
+    return res.json({
+      success: true,
+      message: "Feedback submitted successfully",
+      data: feedback,
+    });
+  } catch (error) {
+    console.error("Feedback submission error:", error);
+    return res.status(500).json({ error: "Failed to submit feedback" });
   }
 });
 
