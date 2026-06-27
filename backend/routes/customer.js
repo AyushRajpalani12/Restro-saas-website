@@ -20,15 +20,26 @@ router.get("/menu", async (req, res) => {
     const { slug, tableNumber } = req.query;
     if (!slug) return res.status(400).json({ error: "Slug is required" });
 
-    const restaurant = await Restaurant.findOne({ slug, isActive: true, isSuspended: false });
+    const restaurant = await Restaurant.findOne({ slug, isActive: true, isSuspended: false }).populate("subscriptionPlan");
     if (!restaurant) return res.status(404).json({ error: "Restaurant not found or inactive" });
 
     let branchId = null;
+    let settings = null;
     if (tableNumber) {
       const table = await Table.findOne({ restaurantId: restaurant._id, tableNumber, isActive: true });
       if (table) {
         branchId = table.branchId;
+        settings = await Settings.findOne({ branchId });
       }
+    }
+
+    if (!settings) {
+      settings = await Settings.findOne({ restaurantId: restaurant._id }) || {
+        currency: "INR",
+        cgstRate: 2.5,
+        sgstRate: 2.5,
+        enableSoundAlerts: true,
+      };
     }
 
     const theme = await Theme.findOne({ restaurantId: restaurant._id }) || {
@@ -48,7 +59,7 @@ router.get("/menu", async (req, res) => {
       restaurantObj.branchId = branchId;
     }
 
-    return res.json({ success: true, restaurant: restaurantObj, theme, categories, menuItems });
+    return res.json({ success: true, restaurant: restaurantObj, theme, categories, menuItems, settings });
   } catch (error) {
     console.error("Load menu error:", error);
     return res.status(500).json({ error: "Failed to load menu" });
@@ -113,10 +124,15 @@ router.post("/orders", async (req, res) => {
     const table = await Table.findOne({ restaurantId, tableNumber, isActive: true });
     if (!table) return res.status(400).json({ error: `Table ${tableNumber} is not active` });
 
+    const restaurant = await Restaurant.findById(restaurantId).populate("subscriptionPlan");
+    if (!restaurant) return res.status(400).json({ error: "Restaurant not found" });
+
+    const hasGstBilling = restaurant.subscriptionPlan && restaurant.subscriptionPlan.features && restaurant.subscriptionPlan.features.includes("gst-billing");
+
     const branchId = table.branchId;
     const settings = await Settings.findOne({ branchId });
-    const cgstRate = settings?.cgstRate || 0;
-    const sgstRate = settings?.sgstRate || 0;
+    const cgstRate = hasGstBilling ? (settings?.cgstRate || 0) : 0;
+    const sgstRate = hasGstBilling ? (settings?.sgstRate || 0) : 0;
     const serviceChargeRate = settings?.serviceChargeRate || 0;
 
     let subtotal = 0;
@@ -141,8 +157,8 @@ router.post("/orders", async (req, res) => {
     }
 
     const taxableAmount = Math.max(0, subtotal - discount);
-    const cgst = 0; // Removed GST tax for now
-    const sgst = 0; // Removed GST tax for now
+    const cgst = hasGstBilling ? (taxableAmount * cgstRate) / 100 : 0;
+    const sgst = hasGstBilling ? (taxableAmount * sgstRate) / 100 : 0;
     const serviceCharge = 0; // Removed Service Charge for now
     const total = taxableAmount + cgst + sgst + serviceCharge;
 

@@ -20,13 +20,17 @@ router.get("/restaurants", async (req, res) => {
 
 router.patch("/restaurants", async (req, res) => {
   try {
-    const { id, status, isActive, isSuspended, customDomain, subscriptionEndsAt } = req.body;
+    const { id, status, isActive, isSuspended, customDomain, subscriptionEndsAt, subscriptionPlan, subscriptionStatus } = req.body;
     const updateFields = {};
     if (status !== undefined) updateFields.status = status;
     if (isActive !== undefined) updateFields.isActive = isActive;
     if (isSuspended !== undefined) updateFields.isSuspended = isSuspended;
     if (customDomain !== undefined) updateFields.customDomain = customDomain;
-    if (subscriptionEndsAt !== undefined) updateFields.subscriptionEndsAt = new Date(subscriptionEndsAt);
+    if (subscriptionEndsAt !== undefined) {
+      updateFields.subscriptionEndsAt = subscriptionEndsAt ? new Date(subscriptionEndsAt) : null;
+    }
+    if (subscriptionPlan !== undefined) updateFields.subscriptionPlan = subscriptionPlan || null;
+    if (subscriptionStatus !== undefined) updateFields.subscriptionStatus = subscriptionStatus;
 
     const updated = await Restaurant.findByIdAndUpdate(id, updateFields, { new: true }).populate("subscriptionPlan");
     return res.json({ success: true, data: updated });

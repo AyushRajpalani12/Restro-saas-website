@@ -25,7 +25,7 @@ function generateSlug(text) {
 // 1. REGISTRATION
 router.post("/register", async (req, res) => {
   try {
-    const { restaurantName, email, password, phone, address } = req.body;
+    const { restaurantName, email, password, phone, address, subscriptionPlanId } = req.body;
 
     if (!restaurantName || !email || !password) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -50,6 +50,19 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    let selectedPlan = defaultPlan;
+    let selectedStatus = "trialing";
+    let selectedEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    if (subscriptionPlanId) {
+      const planExists = await SubscriptionPlan.findById(subscriptionPlanId);
+      if (planExists) {
+        selectedPlan = planExists;
+        selectedStatus = planExists.price > 0 ? "active" : "trialing";
+        selectedEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      }
+    }
+
     let slug = generateSlug(restaurantName);
     let slugConflict = await Restaurant.findOne({ slug });
     let counter = 1;
@@ -65,9 +78,9 @@ router.post("/register", async (req, res) => {
       billingEmail: email.toLowerCase(),
       phone,
       address,
-      subscriptionPlan: defaultPlan._id,
-      subscriptionStatus: "trialing",
-      subscriptionEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      subscriptionPlan: selectedPlan._id,
+      subscriptionStatus: selectedStatus,
+      subscriptionEndsAt: selectedEndsAt,
     });
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -189,10 +202,7 @@ router.post("/forgot-password", async (req, res) => {
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.json({
-        success: true,
-        message: "If a matching user was found, a password reset OTP was sent to your email",
-      });
+      return res.status(404).json({ error: "No user found with this email address" });
     }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -204,7 +214,7 @@ router.post("/forgot-password", async (req, res) => {
 
     return res.json({
       success: true,
-      message: "If a matching user was found, a password reset OTP was sent to your email",
+      message: "Password reset OTP has been sent successfully to your email",
     });
   } catch (error) {
     console.error("Forgot password error:", error);

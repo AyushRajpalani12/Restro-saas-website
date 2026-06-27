@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const QRCodeGenerator = require("qrcode");
 
 const checkAuth = require("../middleware/auth");
+const checkFeature = require("../middleware/subscription");
 const Category = require("../models/Category");
 const MenuItem = require("../models/MenuItem");
 const Variant = require("../models/Variant");
@@ -129,7 +130,7 @@ router.get("/dashboard", async (req, res) => {
 });
 
 // 2. CATEGORIES
-router.get("/categories", async (req, res) => {
+router.get("/categories", checkFeature("menu"), async (req, res) => {
   try {
     const categories = await Category.find({ restaurantId: req.user.restaurantId }).sort({ sortOrder: 1, name: 1 });
     return res.json({ success: true, data: categories });
@@ -138,7 +139,7 @@ router.get("/categories", async (req, res) => {
   }
 });
 
-router.post("/categories", async (req, res) => {
+router.post("/categories", checkFeature("menu"), async (req, res) => {
   try {
     const { name, description, sortOrder, isActive } = req.body;
     if (!name) return res.status(400).json({ error: "Name is required" });
@@ -156,7 +157,7 @@ router.post("/categories", async (req, res) => {
   }
 });
 
-router.patch("/categories", async (req, res) => {
+router.patch("/categories", checkFeature("menu"), async (req, res) => {
   try {
     const { id, name, description, sortOrder, isActive } = req.body;
     const updateFields = {};
@@ -176,7 +177,7 @@ router.patch("/categories", async (req, res) => {
   }
 });
 
-router.delete("/categories", async (req, res) => {
+router.delete("/categories", checkFeature("menu"), async (req, res) => {
   try {
     const { id } = req.query;
     await Category.findOneAndDelete({ _id: id, restaurantId: req.user.restaurantId });
@@ -187,7 +188,7 @@ router.delete("/categories", async (req, res) => {
 });
 
 // 3. MENU ITEMS
-router.get("/menu", async (req, res) => {
+router.get("/menu", checkFeature("menu"), async (req, res) => {
   try {
     const menuItems = await MenuItem.find({ restaurantId: req.user.restaurantId })
       .populate("categoryId")
@@ -200,7 +201,7 @@ router.get("/menu", async (req, res) => {
   }
 });
 
-router.post("/menu", async (req, res) => {
+router.post("/menu", checkFeature("menu"), async (req, res) => {
   try {
     const { restaurantId, branchId } = req.user;
     const {
@@ -257,7 +258,7 @@ router.post("/menu", async (req, res) => {
   }
 });
 
-router.patch("/menu", async (req, res) => {
+router.patch("/menu", checkFeature("menu"), async (req, res) => {
   try {
     const { restaurantId } = req.user;
     const {
@@ -312,7 +313,7 @@ router.patch("/menu", async (req, res) => {
   }
 });
 
-router.delete("/menu", async (req, res) => {
+router.delete("/menu", checkFeature("menu"), async (req, res) => {
   try {
     const { id } = req.query;
     await MenuItem.findOneAndDelete({ _id: id, restaurantId: req.user.restaurantId });
@@ -325,7 +326,7 @@ router.delete("/menu", async (req, res) => {
 });
 
 // 4. TABLES & QR CODES
-router.get("/tables", async (req, res) => {
+router.get("/tables", checkFeature("qr-tables"), async (req, res) => {
   try {
     const tables = await Table.find({ branchId: req.user.branchId }).sort({ tableNumber: 1 });
     const qrcodes = await QRCode.find({ branchId: req.user.branchId });
@@ -341,7 +342,7 @@ router.get("/tables", async (req, res) => {
   }
 });
 
-router.post("/tables", async (req, res) => {
+router.post("/tables", checkFeature("qr-tables"), async (req, res) => {
   try {
     const { restaurantId, branchId } = req.user;
     const { tableNumber, seatingCapacity } = req.body;
@@ -375,7 +376,7 @@ router.post("/tables", async (req, res) => {
   }
 });
 
-router.delete("/tables", async (req, res) => {
+router.delete("/tables", checkFeature("qr-tables"), async (req, res) => {
   try {
     const { id } = req.query;
     await Table.findOneAndDelete({ _id: id, branchId: req.user.branchId });
@@ -387,7 +388,7 @@ router.delete("/tables", async (req, res) => {
 });
 
 // 5. STAFF CREDENTIALS
-router.get("/staff", async (req, res) => {
+router.get("/staff", checkFeature("staff"), async (req, res) => {
   try {
     const staff = await User.find({
       restaurantId: req.user.restaurantId,
@@ -399,7 +400,7 @@ router.get("/staff", async (req, res) => {
   }
 });
 
-router.post("/staff", async (req, res) => {
+router.post("/staff", checkFeature("staff"), async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
     const existing = await User.findOne({ email: email.toLowerCase() });
@@ -421,7 +422,7 @@ router.post("/staff", async (req, res) => {
   }
 });
 
-router.delete("/staff", async (req, res) => {
+router.delete("/staff", checkFeature("staff"), async (req, res) => {
   try {
     const { id } = req.query;
     if (id === req.user.id) return res.status(400).json({ error: "Cannot delete yourself" });
@@ -433,7 +434,7 @@ router.delete("/staff", async (req, res) => {
 });
 
 // 6. COUPONS
-router.get("/coupons", async (req, res) => {
+router.get("/coupons", checkFeature("coupons"), async (req, res) => {
   try {
     const coupons = await Coupon.find({ restaurantId: req.user.restaurantId }).sort({ endDate: -1 });
     return res.json({ success: true, data: coupons });
@@ -442,7 +443,7 @@ router.get("/coupons", async (req, res) => {
   }
 });
 
-router.post("/coupons", async (req, res) => {
+router.post("/coupons", checkFeature("coupons"), async (req, res) => {
   try {
     const { code, discountType, discountValue, minOrderValue, endDate } = req.body;
     const existing = await Coupon.findOne({ restaurantId: req.user.restaurantId, code: code.toUpperCase() });
@@ -462,7 +463,7 @@ router.post("/coupons", async (req, res) => {
   }
 });
 
-router.delete("/coupons", async (req, res) => {
+router.delete("/coupons", checkFeature("coupons"), async (req, res) => {
   try {
     const { id } = req.query;
     await Coupon.findOneAndDelete({ _id: id, restaurantId: req.user.restaurantId });
@@ -506,7 +507,7 @@ router.patch("/settings", async (req, res) => {
 });
 
 // 8. ORDERS MANAGEMENT
-router.get("/orders", async (req, res) => {
+router.get("/orders", checkFeature("orders"), async (req, res) => {
   try {
     const { status } = req.query;
     const query = { branchId: req.user.branchId };
@@ -528,7 +529,7 @@ router.get("/orders", async (req, res) => {
   }
 });
 
-router.patch("/orders", async (req, res) => {
+router.patch("/orders", checkFeature("orders"), async (req, res) => {
   try {
     const { id, status, paymentStatus, paymentMethod } = req.body;
     const order = await Order.findOne({ _id: id, branchId: req.user.branchId });
@@ -564,7 +565,7 @@ router.patch("/orders", async (req, res) => {
 // 8. RESTAURANT DETAILS
 router.get("/restaurant-info", async (req, res) => {
   try {
-    const restaurant = await Restaurant.findById(req.user.restaurantId);
+    const restaurant = await Restaurant.findById(req.user.restaurantId).populate("subscriptionPlan");
     if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
     return res.json({ success: true, data: restaurant });
   } catch (error) {
