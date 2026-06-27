@@ -24,6 +24,8 @@ import {
   User,
   Bell,
   Check,
+  Lock,
+  Zap,
 } from "lucide-react";
 import Button from "@/components/ui/button";
 
@@ -33,7 +35,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const { data: restaurantResponse } = useQuery<{ success: boolean; data: { name: string } }>({
+  const { data: restaurantResponse } = useQuery<{
+    success: boolean;
+    data: {
+      name: string;
+      subscriptionPlan?: {
+        name: string;
+        features: string[];
+      };
+    };
+  }>({
     queryKey: ["admin", "restaurant-info"],
     queryFn: () => apiFetch("/api/admin/restaurant-info"),
     enabled: status === "authenticated",
@@ -123,14 +134,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-    { name: "Live Orders", href: "/admin/orders", icon: ShoppingBag },
-    { name: "Categories", href: "/admin/categories", icon: Tags },
-    { name: "Menu Items", href: "/admin/menu", icon: UtensilsCrossed },
-    { name: "Tables & QRs", href: "/admin/tables", icon: TableProperties },
-    { name: "Staff Credentials", href: "/admin/staff", icon: Users },
-    { name: "Coupons", href: "/admin/coupons", icon: Ticket },
+    { name: "Live Orders", href: "/admin/orders", icon: ShoppingBag, feature: "orders" },
+    { name: "Categories", href: "/admin/categories", icon: Tags, feature: "menu" },
+    { name: "Menu Items", href: "/admin/menu", icon: UtensilsCrossed, feature: "menu" },
+    { name: "Tables & QRs", href: "/admin/tables", icon: TableProperties, feature: "qr-tables" },
+    { name: "Staff Credentials", href: "/admin/staff", icon: Users, feature: "staff" },
+    { name: "Coupons", href: "/admin/coupons", icon: Ticket, feature: "coupons" },
     { name: "Settings", href: "/admin/settings", icon: SettingsIcon },
   ];
+
+  const activeFeatures = restaurantResponse?.data?.subscriptionPlan?.features || [];
+  const planName = restaurantResponse?.data?.subscriptionPlan?.name || "Trial Plan";
+
+  const SYSTEM_FEATURES = ["menu", "orders", "qr-tables", "staff", "coupons"];
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (role === "SUPER_ADMIN") return true;
+    return !item.feature || activeFeatures.includes(item.feature);
+  });
+
+  // Dynamically inject custom features from active plan into sidebar links
+  activeFeatures.forEach((feature) => {
+    if (!SYSTEM_FEATURES.includes(feature)) {
+      if (!filteredNavItems.some((item) => item.feature === feature)) {
+        filteredNavItems.push({
+          name: feature.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          href: `/admin/custom/${feature}`,
+          icon: Zap,
+          feature: feature,
+        });
+      }
+    }
+  });
+
+  const isCustomRoute = pathname.startsWith("/admin/custom/");
+  const customFeatureId = isCustomRoute ? pathname.replace("/admin/custom/", "") : null;
+
+  const currentNavItem = navItems.find((item) => pathname.startsWith(item.href));
+  const isFeatureLocked =
+    role !== "SUPER_ADMIN" && (
+      (currentNavItem && currentNavItem.feature && !activeFeatures.includes(currentNavItem.feature)) ||
+      (isCustomRoute && customFeatureId && !activeFeatures.includes(customFeatureId))
+    );
+
+  const lockedFeatureName = isCustomRoute && customFeatureId
+    ? customFeatureId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : currentNavItem?.name;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
@@ -147,7 +196,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <nav className="flex-1 space-y-1">
-          {navItems.map((item) => {
+          {filteredNavItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -207,7 +256,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-10 bg-slate-950/80 backdrop-blur-lg pt-16 flex flex-col p-6">
           <nav className="space-y-2 flex-1">
-            {navItems.map((item) => {
+            {filteredNavItems.map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
               return (
@@ -301,7 +350,59 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             )}
           </div>
         </div>
-        {children}
+        {isFeatureLocked ? (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 max-w-lg mx-auto py-12">
+            <div className="relative mb-6 animate-pulse">
+              <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-full scale-125" />
+              <div className="relative bg-slate-900 border border-slate-800 p-6 rounded-3xl text-orange-500 shadow-2xl">
+                <Lock className="h-12 w-12" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-black text-white tracking-tight mb-2">
+              Feature is Locked
+            </h2>
+            <p className="text-sm text-slate-400 leading-relaxed mb-6">
+              Your subscription plan (<span className="text-orange-400 font-semibold">{planName}</span>) does not include access to <span className="text-white font-bold">{lockedFeatureName}</span>. Please upgrade your plan to unlock this module.
+            </p>
+            <div className="w-full bg-slate-900/40 border border-slate-850 backdrop-blur-md rounded-2xl p-5 mb-8 text-left space-y-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Zap className="h-3.5 w-3.5 text-orange-500" /> Why upgrade?
+              </h4>
+              <ul className="text-xs text-slate-400 space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500">•</span>
+                  <span>Access advanced automation & staff tools.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500">•</span>
+                  <span>Scale your operations with higher limits.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-orange-500">•</span>
+                  <span>Enable complete system synchronization.</span>
+                </li>
+              </ul>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
+              <Button
+                onClick={() => router.push("/admin/dashboard")}
+                className="bg-slate-900 border border-slate-850 hover:bg-slate-800 text-slate-300 font-semibold px-6 py-2.5 rounded-xl cursor-pointer"
+              >
+                Go to Dashboard
+              </Button>
+              <Button
+                onClick={() => {
+                  toast.success("Upgrade inquiry sent to Super Admin!");
+                }}
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-orange-500/10 cursor-pointer"
+              >
+                Upgrade Plan
+              </Button>
+            </div>
+          </div>
+        ) : (
+          children
+        )}
       </main>
     </div>
   );

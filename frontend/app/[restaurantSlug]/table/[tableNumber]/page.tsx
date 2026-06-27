@@ -66,6 +66,12 @@ interface Restaurant {
   name: string;
   slug: string;
   branchId?: string;
+  subscriptionPlan?: {
+    _id: string;
+    name: string;
+    price: number;
+    features: string[];
+  };
 }
 
 interface Theme {
@@ -74,12 +80,21 @@ interface Theme {
   fontFamily: string;
 }
 
+interface SettingsData {
+  currency: string;
+  cgstRate: number;
+  sgstRate: number;
+  serviceChargeRate: number;
+  deliveryChargeRate: number;
+}
+
 interface MenuResponse {
   success: boolean;
   restaurant: Restaurant;
   theme: Theme;
   categories: Category[];
   menuItems: MenuItem[];
+  settings?: SettingsData;
 }
 
 export default function TableOrderingPage({ params }: { params: Promise<{ restaurantSlug: string; tableNumber: string }> }) {
@@ -147,9 +162,9 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
 
   if (error || !menuResponse?.success || !restaurant) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 text-center">
-        <UtensilsCrossed className="h-16 w-16 text-slate-800 mb-4" />
-        <h1 className="text-2xl font-bold text-white mb-2">Menu Unavailable</h1>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-955 px-4 text-center text-slate-100">
+        <UtensilsCrossed className="h-16 w-16 text-slate-800 mb-4 animate-bounce" />
+        <h1 className="text-2xl font-bold mb-2">Menu Unavailable</h1>
         <p className="text-slate-400">The QR code you scanned has expired or is invalid.</p>
       </div>
     );
@@ -259,6 +274,10 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
       toast.error("Please enter your name and phone number");
       return;
     }
+    if (customerPhone.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits");
+      return;
+    }
 
     setSubmittingOrder(true);
     try {
@@ -298,7 +317,7 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
         toast.success("Order placed successfully! Redirecting...");
         clearCart();
         setCartOpen(false);
-        router.push(`/[restaurantSlug]/table/${tableNumber}/track/${res.orderId}`);
+        router.push(`/${restaurantSlug}/table/${tableNumber}/track/${res.orderId}`);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to place order");
@@ -316,8 +335,14 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
       coupon.discountType === "percentage" ? (subtotal * coupon.discountValue) / 100 : coupon.discountValue;
   }
   const taxableAmount = Math.max(0, subtotal - discount);
-  const cgst = 0; // Removed GST tax for now
-  const sgst = 0; // Removed GST tax for now
+
+  // Check if gst-billing feature is active
+  const hasGstBilling = restaurant?.subscriptionPlan?.features?.includes("gst-billing");
+  const cgstRate = hasGstBilling ? (menuResponse?.settings?.cgstRate ?? 2.5) : 0;
+  const sgstRate = hasGstBilling ? (menuResponse?.settings?.sgstRate ?? 2.5) : 0;
+
+  const cgst = (taxableAmount * cgstRate) / 100;
+  const sgst = (taxableAmount * sgstRate) / 100;
   const total = taxableAmount + cgst + sgst;
 
   const totalQty = items.reduce((acc, i) => acc + i.quantity, 0);
@@ -332,155 +357,232 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 relative overflow-hidden">
-      {/* Background radial accent */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-[140px]" style={{ backgroundColor: `${primaryCol}08` }} />
+    <div className="min-h-screen bg-[#070913] text-slate-100 flex flex-col pb-28 relative overflow-x-hidden font-sans">
+      {/* Abstract custom styled micro-animations */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes swing {
+          0%, 100% { transform: rotate(0deg); }
+          20% { transform: rotate(15deg); }
+          40% { transform: rotate(-10deg); }
+          60% { transform: rotate(5deg); }
+          80% { transform: rotate(-5deg); }
+        }
+        .animate-swing {
+          animation: swing 1.2s ease infinite alternate;
+          transform-origin: top center;
+        }
+        @keyframes slideUp {
+          from { transform: translateY(60px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        /* Custom scrollbar hides */
+        .scrollbar-none::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-none {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}} />
 
-      {/* Top Header */}
-      <header className="sticky top-0 bg-slate-950/80 backdrop-blur-md border-b border-slate-900/60 p-4 z-35 flex items-center justify-between">
-        <div>
-          <h1 className="font-extrabold text-white text-base tracking-tight">{restaurant.name}</h1>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-            Seated at Table {tableNumber}
-          </p>
+      {/* Background radial abstract gradient meshes */}
+      <div className="absolute top-[-10%] left-[-20%] w-[80vw] h-[80vw] max-w-[600px] rounded-full blur-[150px] opacity-[0.14] pointer-events-none" style={{ backgroundColor: primaryCol }} />
+      <div className="absolute top-[40%] right-[-20%] w-[60vw] h-[60vw] max-w-[500px] rounded-full blur-[130px] opacity-[0.07] pointer-events-none" style={{ backgroundColor: "#3b82f6" }} />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b06_1px,transparent_1px),linear-gradient(to_bottom,#1e293b06_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_80%,transparent_100%)] pointer-events-none" />
+
+      {/* Frosted Glass Header */}
+      <header className="sticky top-0 backdrop-blur-xl bg-[#090d22]/80 border-b border-slate-800/60 px-5 py-4.5 z-30 flex items-center justify-between shadow-lg shadow-[#00000030]">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center font-black shadow-lg shadow-orange-500/20">
+            {restaurant.name.charAt(0)}
+          </div>
+          <div>
+            <h1 className="font-extrabold text-white text-base tracking-tight leading-none mb-1.5">{restaurant.name}</h1>
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-[10px] text-emerald-450 font-black uppercase tracking-wider leading-none">
+                Table {tableNumber}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={handleCallWaiter}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-400 rounded-xl text-xs font-bold transition-all active:scale-[0.97]"
-          >
-            <BellRing className="h-4 w-4" />
-            Call Waiter
-          </button>
-        </div>
+        <button
+          onClick={handleCallWaiter}
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-slate-800 hover:border-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all duration-300 active:scale-95 shadow-sm cursor-pointer"
+        >
+          <BellRing className="h-4 w-4 text-orange-500 animate-pulse" />
+          Call Waiter
+        </button>
       </header>
 
-      {/* Categories & Filter layout */}
-      <main className="max-w-4xl mx-auto w-full px-4 mt-6 space-y-4 flex-1">
-        {/* Veg/Non-Veg Quick Toggle Filters */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setFilterType("all")}
-            className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase border transition-colors ${
-              filterType === "all"
-                ? "bg-slate-900 border-slate-800 text-white"
-                : "border-transparent text-slate-500 hover:text-slate-400"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setFilterType("veg")}
-            className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase border flex items-center gap-1 transition-colors ${
-              filterType === "veg"
-                ? "bg-emerald-950/40 border-emerald-900/60 text-emerald-400"
-                : "border-transparent text-slate-500 hover:text-slate-400"
-            }`}
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Veg
-          </button>
-          <button
-            onClick={() => setFilterType("non-veg")}
-            className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wider uppercase border flex items-center gap-1 transition-colors ${
-              filterType === "non-veg"
-                ? "bg-red-950/40 border-red-900/60 text-red-400"
-                : "border-transparent text-slate-500 hover:text-slate-400"
-            }`}
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-            Non-Veg
-          </button>
+      {/* Main Container */}
+      <main className="max-w-4xl mx-auto w-full px-4 mt-6 space-y-6 flex-1 z-10 animate-slide-up">
+        
+        {/* Welcome Branding Hero Card */}
+        <div className="bg-gradient-to-br from-slate-900/60 to-slate-950/20 border border-slate-800/40 rounded-3xl p-6 relative overflow-hidden shadow-2xl backdrop-blur-xl">
+          <div className="absolute -top-12 -right-12 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-orange-500" style={{ color: primaryCol }} />
+                <span className="text-[9px] uppercase font-black tracking-widest text-slate-400">Digital Dining Experience</span>
+              </div>
+              <h2 className="text-xl font-black text-white tracking-tight leading-tight">Welcome to {restaurant.name}</h2>
+              <p className="text-xs text-slate-405 leading-relaxed">Browse our menu specialties, customize toppings, and send orders directly to the kitchen.</p>
+            </div>
+            <div className="inline-flex items-center gap-2.5 bg-white/5 border border-white/10 px-4 py-2.5 rounded-2xl">
+              <Clock className="h-4 w-4 text-orange-400" style={{ color: primaryCol }} />
+              <span className="text-[9px] text-slate-500 font-black uppercase tracking-wider">Average Prep:</span>
+              <span className="text-xs font-extrabold text-white">~ 15-20 Mins</span>
+            </div>
+          </div>
         </div>
 
-        {/* Categories Bar */}
-        <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none">
-          <button
-            onClick={() => setSelectedCat("All")}
-            className={`px-4.5 py-2 rounded-full text-xs font-extrabold whitespace-nowrap transition-all duration-200 ${
-              selectedCat === "All"
-                ? "text-white"
-                : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-850"
-            }`}
-            style={{ backgroundColor: selectedCat === "All" ? primaryCol : undefined }}
-          >
-            All Items
-          </button>
-          {categories.map((cat) => {
-            const isSel = selectedCat === cat._id;
-            return (
-              <button
-                key={cat._id}
-                onClick={() => setSelectedCat(cat._id)}
-                className={`px-4.5 py-2 rounded-full text-xs font-extrabold whitespace-nowrap transition-all duration-200 ${
-                  isSel
-                    ? "text-white"
-                    : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-850"
-                }`}
-                style={{ backgroundColor: isSel ? primaryCol : undefined }}
-              >
-                {cat.name}
-              </button>
-            );
-          })}
+        <div className="flex flex-col gap-2 border-b border-slate-900/40 pb-4.5">
+          <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-widest leading-none">Dietary Preference</h3>
+          <div className="flex items-center gap-1 bg-slate-950/60 border border-slate-850 p-1 rounded-2xl shadow-inner w-full">
+            <button
+              onClick={() => setFilterType("all")}
+              className={`flex-1 py-2.5 rounded-xl text-[10px] font-black tracking-wider uppercase transition-all duration-300 cursor-pointer text-center ${
+                filterType === "all"
+                  ? "bg-slate-900 text-white shadow border border-slate-800"
+                  : "text-slate-500 hover:text-slate-350 border border-transparent"
+              }`}
+            >
+              All Food
+            </button>
+            <button
+              onClick={() => setFilterType("veg")}
+              className={`flex-1 py-2.5 rounded-xl text-[10px] font-black tracking-wider uppercase flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer text-center ${
+                filterType === "veg"
+                  ? "bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 shadow"
+                  : "text-slate-500 hover:text-slate-350 border border-transparent"
+              }`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Veg Only
+            </button>
+            <button
+              onClick={() => setFilterType("non-veg")}
+              className={`flex-1 py-2.5 rounded-xl text-[10px] font-black tracking-wider uppercase flex items-center justify-center gap-1.5 transition-all duration-305 cursor-pointer text-center ${
+                filterType === "non-veg"
+                  ? "bg-red-500/10 border border-red-500/25 text-red-400 shadow"
+                  : "text-slate-500 hover:text-slate-350 border border-transparent"
+              }`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+              Non-Veg
+            </button>
+          </div>
+        </div>
+
+        {/* Categories Bar Scrollable */}
+        <div className="relative">
+          <div className="flex gap-2.5 overflow-x-auto pb-3 pt-1 scrollbar-none scroll-smooth">
+            <button
+              onClick={() => setSelectedCat("All")}
+              className={`px-5 py-2.5 rounded-2xl text-xs font-black tracking-wide whitespace-nowrap transition-all duration-305 cursor-pointer border ${
+                selectedCat === "All"
+                  ? "text-white shadow-lg shadow-orange-500/10"
+                  : "bg-[#0c0f24]/50 text-slate-400 border-slate-850/60 hover:text-slate-200 hover:border-slate-800"
+              }`}
+              style={{
+                backgroundColor: selectedCat === "All" ? primaryCol : undefined,
+                borderColor: selectedCat === "All" ? primaryCol : undefined,
+                boxShadow: selectedCat === "All" ? `0 8px 20px -6px ${primaryCol}40` : undefined,
+              }}
+            >
+              🌟 All Specialties
+            </button>
+            {categories.map((cat) => {
+              const isSel = selectedCat === cat._id;
+              return (
+                <button
+                  key={cat._id}
+                  onClick={() => setSelectedCat(cat._id)}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-black tracking-wide whitespace-nowrap transition-all duration-305 cursor-pointer border ${
+                    isSel
+                      ? "text-white shadow-lg shadow-orange-500/10"
+                      : "bg-[#0c0f24]/50 text-slate-400 border-slate-850/60 hover:text-slate-200 hover:border-slate-800"
+                  }`}
+                  style={{
+                    backgroundColor: isSel ? primaryCol : undefined,
+                    borderColor: isSel ? primaryCol : undefined,
+                    boxShadow: isSel ? `0 8px 20px -6px ${primaryCol}40` : undefined,
+                  }}
+                >
+                  {cat.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Menu Items Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
           {filteredItems.length === 0 ? (
-            <div className="md:col-span-2 text-center py-16 text-slate-500 text-xs">
+            <div className="md:col-span-2 text-center py-20 text-slate-500 text-xs bg-slate-900/10 border border-slate-850/60 rounded-3xl backdrop-blur-sm">
+              <UtensilsCrossed className="h-10 w-10 text-slate-800 mx-auto mb-3" />
               No matching menu items found in this section.
             </div>
           ) : (
             filteredItems.map((item) => (
               <Card
                 key={item._id}
-                className={`p-4 bg-slate-900/10 border border-slate-850 rounded-2xl flex gap-4 ${
-                  item.isOutOfStock ? "opacity-60" : ""
+                className={`p-4 bg-gradient-to-b from-[#0e122d]/40 to-[#070919]/60 border border-slate-855/65 hover:border-orange-500/20 rounded-[28px] flex gap-4.5 transition-all duration-300 hover:scale-[1.01] hover:shadow-xl hover:shadow-[#00000045] group relative ${
+                  item.isOutOfStock ? "opacity-55 pointer-events-none" : ""
                 }`}
               >
-                {/* Photo */}
-                <div className="h-24 w-24 rounded-xl bg-slate-950 flex items-center justify-center overflow-hidden shrink-0 border border-slate-900 relative">
+                {/* Photo & Food Type Emblem */}
+                <div className="h-28 w-28 rounded-2xl bg-slate-955 flex items-center justify-center overflow-hidden shrink-0 border border-slate-900 relative shadow-inner">
                   {item.images?.[0] ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.images[0]} alt={item.name} className="h-full w-full object-cover" />
+                    <img src={item.images[0]} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   ) : (
                     <UtensilsCrossed className="h-8 w-8 text-slate-850" />
                   )}
-                  <span
-                    className={`absolute bottom-1.5 left-1.5 h-2 w-2 rounded-full ring-4 ring-slate-950 ${
-                      item.foodType === "veg" ? "bg-emerald-500" : "bg-red-500"
-                    }`}
-                  />
+                  {/* Indian Standard food type badge (square box with a dot inside) */}
+                  <span className={`absolute top-2.5 left-2.5 p-0.5 rounded bg-slate-950/85 border ${item.foodType === "veg" ? "border-emerald-500/40" : "border-red-500/40"} flex items-center justify-center h-5 w-5 backdrop-blur-sm shadow`}>
+                    <span className={`h-2 w-2 rounded-full ${item.foodType === "veg" ? "bg-emerald-500" : "bg-red-500"}`} />
+                  </span>
                 </div>
 
                 {/* Details */}
                 <div className="flex-1 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <h3 className="text-sm font-extrabold text-white leading-tight">{item.name}</h3>
+                  <div className="space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-sm font-black text-white leading-snug group-hover:text-orange-400 transition-colors duration-200">{item.name}</h3>
                       {item.isRecommended && (
-                        <span className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[8px] uppercase font-black px-1.5 py-0.5 rounded">
-                          Recommended
+                        <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[8px] tracking-wider uppercase font-black px-2 py-0.5 rounded-lg shrink-0 flex items-center gap-1 shadow">
+                          <Sparkles className="h-2 w-2" /> Reco
                         </span>
                       )}
                     </div>
-                    <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-2">{item.description}</p>
+                    <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-2 pr-1">{item.description}</p>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-900/40">
-                    <span className="text-base font-extrabold text-white">₹{item.price}</span>
+                  <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-900/40">
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="text-[10px] text-slate-400 font-bold">₹</span>
+                      <span className="text-base font-black text-white">{item.price}</span>
+                    </div>
                     {item.isOutOfStock ? (
-                      <span className="text-[10px] text-red-500 uppercase font-black tracking-wider">Sold Out</span>
+                      <span className="text-[9px] text-red-500 uppercase font-black tracking-wider bg-red-955/20 px-2.5 py-1 rounded-lg border border-red-900/35">Sold Out</span>
                     ) : (
                       <Button
                         size="sm"
                         onClick={() => handleAddItemClick(item)}
-                        className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 h-auto text-[10px] rounded-lg shadow shadow-orange-500/10"
-                        style={{ backgroundColor: primaryCol }}
+                        className="text-white font-extrabold py-2 px-4.5 h-auto text-[10px] rounded-xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
+                        style={{
+                          backgroundImage: `linear-gradient(135deg, ${primaryCol}, ${primaryCol}dd)`,
+                          boxShadow: `0 4px 14px -4px ${primaryCol}40`,
+                        }}
                       >
-                        Add +
+                        Add Item +
                       </Button>
                     )}
                   </div>
@@ -491,21 +593,44 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
         </div>
       </main>
 
-      {/* Floating Bottom Cart Bar */}
+      {/* Footer Section */}
+      <footer className="w-full max-w-4xl mx-auto px-4 mt-8 mb-24 text-center space-y-3 z-10 border-t border-slate-900/40 pt-8 animate-slide-up">
+        <div className="flex items-center justify-center gap-2 text-slate-500">
+          <UtensilsCrossed className="h-4 w-4" />
+          <span className="text-[10px] uppercase font-black tracking-widest">{restaurant.name}</span>
+        </div>
+        <p className="text-xs text-slate-400 font-medium italic max-w-xs mx-auto leading-relaxed">
+          "Good food is the foundation of genuine happiness. Prepared fresh, served with love!"
+        </p>
+        <p className="text-[9px] text-slate-600 font-bold uppercase tracking-wider">
+          Powered by Restro SaaS • Contactless Dining
+        </p>
+      </footer>
+
+      {/* Floating Bottom Cart Island */}
       {totalQty > 0 && (
-        <div className="fixed bottom-0 inset-x-0 bg-slate-950 border-t border-slate-900 p-4 z-40 flex items-center justify-center">
+        <div className="fixed bottom-4 inset-x-4 max-w-md mx-auto z-40 animate-slide-up">
           <button
             onClick={() => setCartOpen(true)}
-            className="max-w-md w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white p-4.5 rounded-xl font-bold flex items-center justify-between shadow-xl shadow-orange-500/15 transition-transform active:scale-[0.98]"
-            style={{ backgroundImage: `linear-gradient(to right, ${primaryCol}, #d97706)` }}
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-650 hover:to-amber-705 text-white p-4 rounded-2xl font-black flex items-center justify-between shadow-2xl shadow-orange-500/20 border border-orange-400/20 hover:scale-[1.01] transition-all active:scale-[0.98] cursor-pointer"
+            style={{
+              backgroundImage: `linear-gradient(135deg, ${primaryCol}, #d97706)`,
+            }}
           >
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5" />
-              <span className="text-sm font-semibold">{totalQty} Item(s) Selected</span>
+            <div className="flex items-center gap-3">
+              <div className="h-8.5 w-8.5 bg-white/10 rounded-xl flex items-center justify-center shadow-inner">
+                <ShoppingBag className="h-4.5 w-4.5 text-white" />
+              </div>
+              <div className="text-left">
+                <span className="text-xs font-black block leading-none">{totalQty} {totalQty === 1 ? 'Dish' : 'Dishes'} Selected</span>
+                <span className="text-[9px] text-white/80 font-semibold mt-0.5 block">View order details</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-base font-black">₹{total}</span>
-              <ArrowRight className="h-4 w-4" />
+            <div className="flex items-center gap-2">
+              <span className="text-base font-black tracking-tight">₹{total}</span>
+              <div className="h-7 w-7 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20">
+                <ArrowRight className="h-4.5 w-4.5 text-white" />
+              </div>
             </div>
           </button>
         </div>
@@ -513,37 +638,37 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
 
       {/* Customise Item Modal Popup */}
       {customizingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/85 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150">
             <div className="p-5 border-b border-slate-850 flex justify-between items-center bg-slate-950/20">
               <div>
                 <h3 className="text-base font-bold text-white">{customizingItem.name}</h3>
                 <p className="text-[10px] text-slate-500 mt-0.5">Customize portion sizes or add extras</p>
               </div>
-              <button onClick={() => setCustomizingItem(null)} className="text-slate-400 hover:text-white">
-                <X className="h-5 w-5" />
+              <button onClick={() => setCustomizingItem(null)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
+                <X className="h-5.5 w-5.5" />
               </button>
             </div>
 
             <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
-              {/* Variants Selection */}
+              {/* Variants Portion Selection */}
               {customizingItem.variants?.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Portion</h4>
+                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Select Portion</h4>
                   <div className="grid grid-cols-2 gap-3">
                     {customizingItem.variants.map((v) => (
                       <button
                         key={v._id}
                         type="button"
                         onClick={() => setSelectedVariant(v)}
-                        className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-colors ${
+                        className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                           selectedVariant?.name === v.name
                             ? "bg-orange-500/5 border-orange-500 text-white font-bold"
-                            : "bg-slate-950 border-slate-850 text-slate-400 hover:text-slate-200"
+                            : "bg-slate-955 border-slate-850 text-slate-400 hover:text-slate-205"
                         }`}
                       >
                         <span className="text-xs">{v.name}</span>
-                        <span className="text-sm font-extrabold text-white mt-1">₹{v.price}</span>
+                        <span className="text-sm font-black text-white mt-1">₹{v.price}</span>
                       </button>
                     ))}
                   </div>
@@ -553,7 +678,7 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
               {/* Addons Selection */}
               {customizingItem.addons?.length > 0 && (
                 <div className="space-y-2.5">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Add Extra Addons</h4>
+                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Add Extra Addons</h4>
                   <div className="space-y-2">
                     {customizingItem.addons.map((a) => {
                       const isSel = selectedAddons.some((addon) => addon._id === a._id);
@@ -562,10 +687,10 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
                           key={a._id}
                           type="button"
                           onClick={() => handleAddonToggle(a)}
-                          className={`w-full p-3 rounded-xl border text-left flex items-center justify-between transition-colors ${
+                          className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                             isSel
                               ? "bg-slate-900 border-orange-500 text-white font-bold"
-                              : "bg-slate-950 border-slate-850 text-slate-400 hover:text-slate-200"
+                              : "bg-slate-955 border-slate-850 text-slate-400 hover:text-slate-205"
                           }`}
                         >
                           <span className="text-xs">{a.name}</span>
@@ -579,20 +704,20 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
 
               {/* Instructions */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Special Requests</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Special Requests</label>
                 <textarea
-                  placeholder="Make it extra spicy / No onions..."
+                  placeholder="Make it extra spicy / No onions / Less salt..."
                   value={instructions}
                   onChange={(e) => setInstructions(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-850 text-slate-200 rounded-lg p-3 text-xs focus:outline-none focus:border-orange-500 h-16 resize-none"
+                  className="w-full bg-slate-955 border border-slate-855 text-slate-200 rounded-xl p-3 text-xs focus:outline-none focus:border-orange-500 h-20 resize-none transition-colors"
                 />
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-850 bg-slate-950/20">
+            <div className="p-4.5 border-t border-slate-855 bg-slate-950/20">
               <Button
                 onClick={handleConfirmCustomization}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg flex items-center justify-center gap-1"
+                className="w-full text-white font-extrabold py-3 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-orange-500/5 cursor-pointer"
                 style={{ backgroundColor: primaryCol }}
               >
                 Add Customised Item
@@ -602,17 +727,17 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
         </div>
       )}
 
-      {/* Cart Drawer Panel overlay */}
+      {/* Cart Drawer Panel Overlay */}
       {cartOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border-l border-slate-800 w-full max-w-md h-full flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-955/80 backdrop-blur-sm">
+          <div className="bg-slate-900 border-l border-slate-805 w-full max-w-md h-full flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-200">
             {/* Header */}
-            <div className="p-5 border-b border-slate-850 flex justify-between items-center bg-slate-950/20">
+            <div className="p-5 border-b border-slate-850 flex justify-between items-center bg-slate-955/20">
               <div className="flex items-center gap-2">
                 <ShoppingBag className="h-5 w-5 text-orange-500" />
                 <h2 className="text-lg font-black text-white">Your Bill Check</h2>
               </div>
-              <button onClick={() => setCartOpen(false)} className="p-1 text-slate-400 hover:text-white transition-colors">
+              <button onClick={() => setCartOpen(false)} className="p-1 text-slate-405 hover:text-white transition-colors cursor-pointer">
                 <X className="h-6 w-6" />
               </button>
             </div>
@@ -621,7 +746,7 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
               <div className="space-y-4">
                 {items.map((item) => (
-                  <div key={item.id} className="flex justify-between items-start gap-4 pb-4 border-b border-slate-900/60 last:border-0 last:pb-0">
+                  <div key={item.id} className="flex justify-between items-start gap-4 pb-4.5 border-b border-slate-900/60 last:border-0 last:pb-0">
                     <div className="flex-1 text-xs space-y-1">
                       <p className="font-extrabold text-white">{item.name}</p>
                       {item.selectedVariant && (
@@ -639,14 +764,14 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
                       <div className="flex items-center gap-2 pt-2">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="h-6 w-6 bg-slate-950 border border-slate-850 hover:bg-slate-850 flex items-center justify-center rounded text-slate-400 hover:text-white"
+                          className="h-6 w-6 bg-slate-955 border border-slate-850 hover:bg-slate-850 flex items-center justify-center rounded text-slate-400 hover:text-white cursor-pointer"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
                         <span className="text-slate-200 font-bold w-4 text-center">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="h-6 w-6 bg-slate-950 border border-slate-850 hover:bg-slate-850 flex items-center justify-center rounded text-slate-400 hover:text-white"
+                          className="h-6 w-6 bg-slate-955 border border-slate-850 hover:bg-slate-850 flex items-center justify-center rounded text-slate-400 hover:text-white cursor-pointer"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
@@ -656,7 +781,7 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
                       <span className="text-sm font-extrabold text-white">₹{item.price * item.quantity}</span>
                       <button
                         onClick={() => removeItem(item.id)}
-                        className="block text-[10px] text-red-500 hover:underline mt-1 cursor-pointer"
+                        className="block text-[10px] text-red-500 hover:underline mt-1 cursor-pointer font-semibold"
                       >
                         Remove
                       </button>
@@ -665,18 +790,18 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
                 ))}
               </div>
 
-              {/* Coupon campaigns */}
+              {/* Coupon input */}
               <div className="border-t border-slate-850 pt-5 space-y-3.5">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Coupon Code</h4>
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Coupon Code</h4>
                 {coupon ? (
-                  <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-xl p-3.5 flex justify-between items-center text-xs">
+                  <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-2xl p-3.5 flex justify-between items-center text-xs">
                     <div>
-                      <p className="font-bold text-emerald-400 tracking-wider">Applied: {coupon.code}</p>
+                      <p className="font-black text-emerald-400 tracking-wider">Applied: {coupon.code}</p>
                       <p className="text-slate-500 font-medium mt-0.5">
                         Saved: {coupon.discountType === "percentage" ? `${coupon.discountValue}%` : `₹${coupon.discountValue}`}
                       </p>
                     </div>
-                    <button onClick={() => setCoupon(null)} className="text-red-500 hover:text-red-400 font-bold">
+                    <button onClick={() => setCoupon(null)} className="text-red-500 hover:text-red-400 font-bold cursor-pointer">
                       Remove
                     </button>
                   </div>
@@ -687,22 +812,22 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
                       placeholder="ENTER COUPON CODE"
                       value={couponCodeText}
                       onChange={(e) => setCouponCodeText(e.target.value.toUpperCase())}
-                      className="flex-1 bg-slate-950 border border-slate-850 text-slate-200 rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none focus:border-orange-500"
+                      className="flex-1 bg-slate-955 border border-slate-850 text-slate-205 rounded-xl px-3.5 py-2 text-xs font-semibold focus:outline-none focus:border-orange-500 transition-colors"
                     />
                     <Button
                       onClick={handleValidateCoupon}
                       disabled={couponValidationLoading}
-                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4"
+                      className="bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs px-4 rounded-xl cursor-pointer"
                     >
-                      {couponValidationLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Apply"}
+                      {couponValidationLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
                     </Button>
                   </div>
                 )}
               </div>
 
-              {/* Customer check Form */}
+              {/* Customer input details form */}
               <form onSubmit={handlePlaceOrder} id="cartPlaceOrderForm" className="border-t border-slate-850 pt-5 space-y-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your Details</h4>
+                <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider">Your Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Input
                     label="Your Name *"
@@ -715,7 +840,12 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
                     label="Mobile Number *"
                     placeholder="9999988888"
                     value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      if (val.length <= 10) {
+                        setCustomerPhone(val);
+                      }
+                    }}
                     required
                   />
                 </div>
@@ -734,28 +864,34 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
               </form>
             </div>
 
-            {/* Calculations & Submit */}
-            <div className="p-5 border-t border-slate-850 bg-slate-950/40 space-y-4">
+            {/* Calculations & Submit placement */}
+            <div className="p-5 border-t border-slate-850 bg-slate-955/40 space-y-4">
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between items-center text-slate-400">
                   <span>Food Items Subtotal:</span>
-                  <span className="font-semibold text-slate-200">₹{subtotal}</span>
+                  <span className="font-semibold text-slate-205">₹{subtotal}</span>
                 </div>
                 {coupon && (
                   <div className="flex justify-between items-center text-emerald-400">
-                    <span>Campaign Discount:</span>
+                    <span>Discount Code Applied:</span>
                     <span className="font-semibold">- ₹{discount}</span>
                   </div>
                 )}
-                 {(cgst + sgst) > 0 && (
+                {cgst > 0 && (
                   <div className="flex justify-between items-center text-slate-400">
-                    <span>Taxes (5% GST):</span>
-                    <span className="font-semibold text-slate-200">₹{(cgst + sgst).toFixed(1)}</span>
+                    <span>CGST ({cgstRate}%):</span>
+                    <span className="font-semibold text-slate-205">₹{cgst.toFixed(1)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center text-sm font-bold text-white pt-2 border-t border-slate-900">
+                {sgst > 0 && (
+                  <div className="flex justify-between items-center text-slate-400">
+                    <span>SGST ({sgstRate}%):</span>
+                    <span className="font-semibold text-slate-205">₹{sgst.toFixed(1)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-sm font-bold text-white pt-2.5 border-t border-slate-900">
                   <span>Total Amount due:</span>
-                  <span className="text-base">₹{total.toFixed(0)}</span>
+                  <span className="text-base font-black">₹{total.toFixed(0)}</span>
                 </div>
               </div>
 
@@ -763,10 +899,10 @@ export default function TableOrderingPage({ params }: { params: Promise<{ restau
                 type="submit"
                 form="cartPlaceOrderForm"
                 disabled={submittingOrder || items.length === 0}
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition-transform"
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition-transform cursor-pointer"
                 style={{ backgroundImage: `linear-gradient(to right, ${primaryCol}, #d97706)` }}
               >
-                {submittingOrder && <Loader2 className="h-4 w-4 animate-spin" />}
+                {submittingOrder && <Loader2 className="h-4 w-4 animate-spin animate-pulse" />}
                 Confirm & Place Order (₹{total.toFixed(0)})
               </Button>
             </div>

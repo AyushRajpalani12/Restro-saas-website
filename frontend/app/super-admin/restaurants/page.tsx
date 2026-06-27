@@ -10,6 +10,7 @@ import Card from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Textarea from "@/components/ui/textarea";
+import Select from "@/components/ui/select";
 import toast from "react-hot-toast";
 
 interface SubscriptionPlan {
@@ -46,7 +47,14 @@ export default function RestaurantsPage() {
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newAddress, setNewAddress] = useState("");
+  const [newSubscriptionPlanId, setNewSubscriptionPlanId] = useState("");
   const [addingRestaurant, setAddingRestaurant] = useState(false);
+
+  // Edit subscription states
+  const [editingPlanRestId, setEditingPlanRestId] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [endsAtText, setEndsAtText] = useState("");
 
   useEffect(() => {
     const restaurantName = searchParams.get("restaurantName");
@@ -70,8 +78,23 @@ export default function RestaurantsPage() {
     queryFn: () => apiFetch("/api/super-admin/restaurants"),
   });
 
+  // Fetch subscription plans
+  const { data: plansData } = useQuery<{ success: boolean; data: SubscriptionPlan[] }>({
+    queryKey: ["super-admin", "plans"],
+    queryFn: () => apiFetch("/api/super-admin/plans"),
+  });
+  const plans = plansData?.data || [];
+
   const updateRestaurantMutation = useMutation({
-    mutationFn: (updatedData: { id: string; isActive?: boolean; isSuspended?: boolean; customDomain?: string }) =>
+    mutationFn: (updatedData: {
+      id: string;
+      isActive?: boolean;
+      isSuspended?: boolean;
+      customDomain?: string;
+      subscriptionPlan?: string;
+      subscriptionStatus?: string;
+      subscriptionEndsAt?: string | null;
+    }) =>
       apiFetch("/api/super-admin/restaurants", {
         method: "PATCH",
         body: JSON.stringify(updatedData),
@@ -81,6 +104,7 @@ export default function RestaurantsPage() {
         toast.success("Tenant status updated");
         queryClient.invalidateQueries({ queryKey: ["super-admin", "restaurants"] });
         setEditingDomainRestId(null);
+        setEditingPlanRestId(null);
       }
     },
     onError: (err: any) => {
@@ -102,11 +126,25 @@ export default function RestaurantsPage() {
     updateRestaurantMutation.mutate({ id, customDomain: customDomainText || "" });
   };
 
+  const handleUpdatePlan = (id: string) => {
+    updateRestaurantMutation.mutate({
+      id,
+      subscriptionPlan: selectedPlanId || "",
+      subscriptionStatus: selectedStatus,
+      subscriptionEndsAt: endsAtText ? new Date(endsAtText).toISOString() : null,
+    });
+  };
+
   // Add Restaurant Handler
   const handleAddRestaurant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRestName || !newAdminEmail || !newAdminPassword) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (newPhone && newPhone.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits");
       return;
     }
 
@@ -123,6 +161,7 @@ export default function RestaurantsPage() {
           password: newAdminPassword,
           phone: newPhone,
           address: newAddress,
+          subscriptionPlanId: newSubscriptionPlanId || undefined,
         }),
       });
 
@@ -147,6 +186,7 @@ export default function RestaurantsPage() {
     setNewAdminPassword("");
     setNewPhone("");
     setNewAddress("");
+    setNewSubscriptionPlanId("");
     setShowAddModal(false);
   };
 
@@ -211,27 +251,100 @@ export default function RestaurantsPage() {
                         <div className="text-xs text-slate-500">{rest.phone || "No phone"}</div>
                       </td>
                       <td className="py-4 px-6">
-                        <div className="flex flex-col gap-1 items-start">
-                          <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-medium border border-slate-700">
-                            {rest.subscriptionPlan?.name || "No Plan"}
-                          </span>
-                          <span
-                            className={`text-[10px] uppercase font-bold tracking-wider ${
-                              rest.subscriptionStatus === "active"
-                                ? "text-emerald-400"
-                                : rest.subscriptionStatus === "trialing"
-                                ? "text-amber-400"
-                                : "text-red-400"
-                            }`}
-                          >
-                            {rest.subscriptionStatus}
-                          </span>
-                          {rest.subscriptionEndsAt && (
-                            <span className="text-[10px] text-slate-500">
-                              expires: {new Date(rest.subscriptionEndsAt).toLocaleDateString()}
+                        {editingPlanRestId === rest._id ? (
+                          <div className="flex flex-col gap-2 max-w-[180px]">
+                            {/* Plan Selection */}
+                            <select
+                              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-orange-500 w-full"
+                              value={selectedPlanId}
+                              onChange={(e) => setSelectedPlanId(e.target.value)}
+                            >
+                              <option value="">No Plan</option>
+                              {plans.map((p) => (
+                                <option key={p._id} value={p._id}>
+                                  {p.name}
+                                </option>
+                              ))}
+                            </select>
+
+                            {/* Status Selection */}
+                            <select
+                              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-orange-500 w-full"
+                              value={selectedStatus}
+                              onChange={(e) => setSelectedStatus(e.target.value)}
+                            >
+                              <option value="trialing">Trialing</option>
+                              <option value="active">Active</option>
+                              <option value="past_due">Past Due</option>
+                              <option value="canceled">Canceled</option>
+                            </select>
+
+                            {/* Ends At Input */}
+                            <input
+                              type="date"
+                              className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200 outline-none focus:border-orange-500 w-full"
+                              value={endsAtText}
+                              onChange={(e) => setEndsAtText(e.target.value)}
+                            />
+
+                            {/* Save/Cancel Buttons */}
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-2 py-1 h-auto"
+                                onClick={() => handleUpdatePlan(rest._id)}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="bg-slate-800 hover:bg-slate-700 text-slate-400 text-[10px] px-2 py-1 h-auto"
+                                onClick={() => setEditingPlanRestId(null)}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-1 items-start group">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-medium border border-slate-700">
+                                {rest.subscriptionPlan?.name || "No Plan"}
+                              </span>
+                              <button
+                                className="opacity-0 group-hover:opacity-100 text-[10px] text-orange-500 hover:underline ml-1 cursor-pointer"
+                                onClick={() => {
+                                  setEditingPlanRestId(rest._id);
+                                  setSelectedPlanId(rest.subscriptionPlan?._id || "");
+                                  setSelectedStatus(rest.subscriptionStatus || "trialing");
+                                  setEndsAtText(
+                                    rest.subscriptionEndsAt
+                                      ? new Date(rest.subscriptionEndsAt).toISOString().split("T")[0]
+                                      : ""
+                                  );
+                                }}
+                              >
+                                Edit
+                              </button>
+                            </div>
+                            <span
+                              className={`text-[10px] uppercase font-bold tracking-wider ${
+                                rest.subscriptionStatus === "active"
+                                  ? "text-emerald-400"
+                                  : rest.subscriptionStatus === "trialing"
+                                  ? "text-amber-400"
+                                  : "text-red-400"
+                              }`}
+                            >
+                              {rest.subscriptionStatus}
                             </span>
-                          )}
-                        </div>
+                            {rest.subscriptionEndsAt && (
+                              <span className="text-[10px] text-slate-500">
+                                expires: {new Date(rest.subscriptionEndsAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td className="py-4 px-6">
                         {editingDomainRestId === rest._id ? (
@@ -360,7 +473,12 @@ export default function RestaurantsPage() {
                 type="tel"
                 placeholder="+91 99999 88888"
                 value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  if (val.length <= 10) {
+                    setNewPhone(val);
+                  }
+                }}
                 disabled={addingRestaurant}
               />
 
@@ -371,6 +489,17 @@ export default function RestaurantsPage() {
                 onChange={(e) => setNewAddress(e.target.value)}
                 disabled={addingRestaurant}
                 rows={3}
+              />
+
+              <Select
+                label="Initial Subscription Plan"
+                value={newSubscriptionPlanId}
+                onChange={(e) => setNewSubscriptionPlanId(e.target.value)}
+                options={[
+                  { value: "", label: "Trial Plan (Default)" },
+                  ...plans.map((p) => ({ value: p._id, label: `${p.name} ($${p.price})` })),
+                ]}
+                disabled={addingRestaurant}
               />
 
               <div className="text-[10px] text-slate-500 font-semibold">

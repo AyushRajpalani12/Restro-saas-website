@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { LayoutDashboard, Store, CreditCard, LogOut, Menu, X, ShieldAlert, User, Mail } from "lucide-react";
+import { LayoutDashboard, Store, CreditCard, LogOut, Menu, X, ShieldAlert, ShieldCheck, User, Mail } from "lucide-react";
 import Button from "@/components/ui/button";
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
@@ -50,6 +50,11 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       name: "Subscription Plans",
       href: "/super-admin/plans",
       icon: CreditCard,
+    },
+    {
+      name: "Access Matrix",
+      href: "/super-admin/access-matrix",
+      icon: ShieldCheck,
     },
     {
       name: "Leads & Inquiries",

@@ -22,6 +22,14 @@ interface SubscriptionPlan {
   isActive: boolean;
 }
 
+const AVAILABLE_FEATURES = [
+  { id: "orders", label: "Live Orders Management", description: "Real-time kitchen order tickets (KDS) & tracking" },
+  { id: "menu", label: "Menu & Categories Builder", description: "Manage categories, dishes, variants, & addons" },
+  { id: "qr-tables", label: "Tables & QR Generator", description: "Create physical tables and scanable QR code templates" },
+  { id: "coupons", label: "Coupons & Discounts", description: "Run discount marketing promotions" },
+  { id: "staff", label: "Staff & Role Credentials", description: "Add kitchen and service waiter credentials" },
+];
+
 export default function PlansPage() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
@@ -34,7 +42,7 @@ export default function PlansPage() {
   const [maxBranches, setMaxBranches] = useState(1);
   const [maxTablesPerBranch, setMaxTablesPerBranch] = useState(10);
   const [maxMenuItems, setMaxMenuItems] = useState(50);
-  const [features, setFeatures] = useState("");
+  const [features, setFeatures] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(true);
 
   // Fetch plans
@@ -90,7 +98,7 @@ export default function PlansPage() {
     setMaxBranches(1);
     setMaxTablesPerBranch(10);
     setMaxMenuItems(50);
-    setFeatures("");
+    setFeatures([]);
     setIsActive(true);
     setEditingPlan(null);
     setShowModal(false);
@@ -104,7 +112,7 @@ export default function PlansPage() {
     setMaxBranches(plan.maxBranches);
     setMaxTablesPerBranch(plan.maxTablesPerBranch);
     setMaxMenuItems(plan.maxMenuItems);
-    setFeatures(plan.features.join(", "));
+    setFeatures(plan.features || []);
     setIsActive(plan.isActive);
     setShowModal(true);
   };
@@ -119,7 +127,7 @@ export default function PlansPage() {
       maxBranches,
       maxTablesPerBranch,
       maxMenuItems,
-      features: features.split(",").map((f) => f.trim()).filter(Boolean),
+      features,
       isActive,
     };
 
@@ -273,13 +281,44 @@ export default function PlansPage() {
                 />
               </div>
 
-              <Input
-                label="Features (comma-separated)"
-                type="text"
-                placeholder="menu, orders, qr-tables, staff-calls"
-                value={features}
-                onChange={(e) => setFeatures(e.target.value)}
-              />
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                  Select Plan Features *
+                </label>
+                <div className="grid grid-cols-1 gap-2.5 max-h-48 overflow-y-auto p-1">
+                  {AVAILABLE_FEATURES.map((feat) => {
+                    const isChecked = features.includes(feat.id);
+                    return (
+                      <div
+                        key={feat.id}
+                        onClick={() => {
+                          if (isChecked) {
+                            setFeatures(features.filter((id) => id !== feat.id));
+                          } else {
+                            setFeatures([...features, feat.id]);
+                          }
+                        }}
+                        className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none ${
+                          isChecked
+                            ? "bg-orange-500/10 border-orange-500/35 text-white"
+                            : "bg-slate-950/40 border-slate-800 hover:border-slate-700 text-slate-400"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          readOnly
+                          className="mt-0.5 rounded bg-slate-950 border-slate-800 text-orange-500 focus:ring-orange-500/20 pointer-events-none"
+                        />
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-bold">{feat.label}</p>
+                          <p className="text-[10px] text-slate-500">{feat.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
               <div className="flex items-center gap-3">
                 <input
