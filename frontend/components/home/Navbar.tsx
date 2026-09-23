@@ -74,7 +74,7 @@ export default function Navbar() {
           </Link>
           <Link
             href="/register"
-            className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-extrabold px-5 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/35 transition-all flex items-center gap-1.5 active:scale-95"
+            className="bg-gradient-to-r from-amber-500 via-orange-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all flex items-center gap-1.5 active:scale-95"
           >
             Start Free Trial
             <ArrowRight className="h-3.5 w-3.5" />
