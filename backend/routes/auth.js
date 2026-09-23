@@ -8,7 +8,7 @@ const Branch = require("../models/Branch");
 const Settings = require("../models/Settings");
 const Theme = require("../models/Theme");
 const SubscriptionPlan = require("../models/SubscriptionPlan");
-const { sendOtpEmail } = require("../services/email");
+const { sendOtpEmail, sendWelcomeRegistrationEmail } = require("../services/email");
 
 function generateSlug(text) {
   return text
@@ -123,8 +123,15 @@ router.post("/register", async (req, res) => {
       restaurantId: restaurant._id,
       primaryColor: "#ea580c",
       secondaryColor: "#1e293b",
-      fontFamily: "Outfit",
+      fontFamily: "Plus Jakarta Sans",
     });
+
+    // Send Welcome Email
+    try {
+      await sendWelcomeRegistrationEmail(user.email, restaurantName + " Admin", restaurantName);
+    } catch (mailErr) {
+      console.warn("Welcome email dispatch notice:", mailErr.message);
+    }
 
     return res.json({
       success: true,

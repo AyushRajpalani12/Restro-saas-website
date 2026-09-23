@@ -10,8 +10,8 @@ const ThemeSchema = new Schema(
     textColor: { type: String },
     fontFamily: {
       type: String,
-      enum: ["Inter", "Roboto", "Outfit", "Playfair Display"],
-      default: "Outfit",
+      enum: ["Plus Jakarta Sans", "Inter", "Roboto", "Outfit", "Playfair Display"],
+      default: "Plus Jakarta Sans",
     },
     faviconUrl: { type: String },
     customCss: { type: String },

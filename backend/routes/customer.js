@@ -52,7 +52,7 @@ router.get("/menu", async (req, res) => {
     const theme = await Theme.findOne({ restaurantId: restaurant._id }) || {
       primaryColor: "#ea580c",
       secondaryColor: "#1e293b",
-      fontFamily: "Outfit",
+      fontFamily: "Plus Jakarta Sans",
     };
 
     const categories = await Category.find({ restaurantId: restaurant._id, isActive: true }).sort({ sortOrder: 1, name: 1 });

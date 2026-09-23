@@ -1,10 +1,13 @@
 const mongoose = require("mongoose");
 const dns = require("dns");
 
-try {
-  dns.setServers(["8.8.8.8", "1.1.1.1"]);
-} catch (err) {
-  // Ignore if custom DNS fails to set
+// Only set custom DNS fallback in local environment if needed, avoid overriding Cloud DNS on Render/Vercel
+if (process.env.NODE_ENV !== "production") {
+  try {
+    dns.setServers(["8.8.8.8", "1.1.1.1"]);
+  } catch (err) {
+    // Ignore DNS set errors
+  }
 }
 
 const dbConnect = async () => {

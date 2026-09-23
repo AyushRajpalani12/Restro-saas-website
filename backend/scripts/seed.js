@@ -202,7 +202,7 @@ async function seed() {
       restaurantId: tastyBites._id,
       primaryColor: "#ea580c",
       secondaryColor: "#1e293b",
-      fontFamily: "Outfit",
+      fontFamily: "Plus Jakarta Sans",
       createdAt: new Date(),
       updatedAt: new Date()
     });
