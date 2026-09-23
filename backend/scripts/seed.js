@@ -591,7 +591,7 @@ async function seed() {
       }
     ]);
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://restro-saas-website.vercel.app";
 
     const qr1 = await qrcodeLib.toDataURL(`${appUrl}/tasty-bites/table/T1`, { width: 500, margin: 2 });
     const qr2 = await qrcodeLib.toDataURL(`${appUrl}/tasty-bites/table/T2`, { width: 500, margin: 2 });

@@ -358,7 +358,7 @@ router.post("/tables", checkFeature("qr-tables"), async (req, res) => {
     });
 
     // Generate QR URL based on target app URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.origin || "https://restro-saas-website.vercel.app";
     const qrUrl = `${appUrl}/${restaurant.slug}/table/${tableNumber}`;
 
     const dataUrl = await QRCodeGenerator.toDataURL(qrUrl, {
@@ -373,6 +373,41 @@ router.post("/tables", checkFeature("qr-tables"), async (req, res) => {
   } catch (error) {
     console.error("Table create error:", error);
     return res.status(500).json({ error: "Failed to create table" });
+  }
+});
+
+// Regenerate all table QR codes to production domain
+router.post("/tables/regenerate-qrs", checkFeature("qr-tables"), async (req, res) => {
+  try {
+    const { restaurantId, branchId } = req.user;
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
+
+    const tables = await Table.find({ branchId });
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://restro-saas-website.vercel.app";
+
+    let updatedCount = 0;
+    for (const table of tables) {
+      const qrUrl = `${appUrl}/${restaurant.slug}/table/${table.tableNumber}`;
+      const dataUrl = await QRCodeGenerator.toDataURL(qrUrl, {
+        width: 500, margin: 2, color: { dark: "#0f172a", light: "#ffffff" }
+      });
+
+      await QRCode.findOneAndUpdate(
+        { branchId, tableId: table._id },
+        { restaurantId, branchId, tableId: table._id, type: "table", qrCodeUrl: dataUrl },
+        { upsert: true, new: true }
+      );
+      updatedCount++;
+    }
+
+    return res.json({
+      success: true,
+      message: `Successfully regenerated ${updatedCount} QR codes to ${appUrl}`
+    });
+  } catch (error) {
+    console.error("Regenerate QR error:", error);
+    return res.status(500).json({ error: "Failed to regenerate QR codes" });
   }
 });
 

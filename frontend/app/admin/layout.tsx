@@ -182,20 +182,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     : currentNavItem?.name;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col md:flex-row font-sans">
+    <div className="min-h-screen bg-[#080b12] text-slate-100 flex flex-col md:flex-row font-sans">
       {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-slate-200 bg-white/90 backdrop-blur-xl p-6 shrink-0 shadow-sm">
+      <aside className="hidden md:flex flex-col w-64 border-r border-slate-800/80 bg-[#0d111c]/90 backdrop-blur-xl p-6 shrink-0 shadow-2xl">
         <div className="flex items-center gap-3 mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-black text-xl shadow-md shadow-orange-500/20">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-black text-xl shadow-lg shadow-orange-500/25">
             R
           </div>
           <div>
-            <h1 className="font-extrabold text-slate-900 text-lg tracking-tight truncate max-w-[150px]">{restaurantName}</h1>
-            <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Tenant Node</p>
+            <h1 className="font-extrabold text-white text-lg tracking-tight truncate max-w-[150px]">{restaurantName}</h1>
+            <p className="text-[10px] text-orange-400 font-extrabold uppercase tracking-wider">Tenant Node</p>
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1.5">
           {filteredNavItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -205,30 +205,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   isActive
-                    ? "bg-orange-500/10 border-l-4 border-orange-500 text-orange-600 font-bold shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    ? "bg-orange-500/15 border-l-4 border-orange-500 text-orange-400 font-bold shadow-md shadow-orange-500/10"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${isActive ? "text-orange-600" : "text-slate-400"}`} />
+                <Icon className={`h-5 w-5 ${isActive ? "text-orange-400" : "text-slate-500"}`} />
                 {item.name}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-slate-200">
+        <div className="mt-auto pt-6 border-t border-slate-800/80">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
+            <div className="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
               <User className="h-4 w-4" />
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-bold text-slate-900 truncate">{session.user?.name}</p>
-              <p className="text-[10px] text-slate-500 truncate">{session.user?.email}</p>
+              <p className="text-xs font-bold text-white truncate">{session.user?.name}</p>
+              <p className="text-[10px] text-slate-400 truncate">{session.user?.email}</p>
             </div>
           </div>
           <button
             onClick={() => nextSignOut({ callbackUrl: "/login" })}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200 cursor-pointer"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all duration-200 cursor-pointer"
           >
             <LogOut className="h-5 w-5" />
             Logout
@@ -237,16 +237,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Mobile Top Header */}
-      <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-200 bg-white/90 backdrop-blur-xl z-20 shadow-xs">
+      <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-800 bg-[#0d111c]/90 backdrop-blur-xl z-20 shadow-md">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-bold text-lg shadow-sm">
             R
           </div>
-          <span className="font-extrabold text-slate-900 text-base tracking-tight">{restaurantName}</span>
+          <span className="font-extrabold text-white text-base tracking-tight">{restaurantName}</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 text-slate-600 hover:text-slate-900 transition-colors"
+          className="p-2 text-slate-300 hover:text-white transition-colors"
         >
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -254,8 +254,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-10 bg-slate-900/40 backdrop-blur-md pt-16 flex flex-col p-6">
-          <div className="bg-white rounded-2xl p-4 shadow-xl border border-slate-200 space-y-2">
+        <div className="md:hidden fixed inset-0 z-10 bg-slate-950/80 backdrop-blur-md pt-16 flex flex-col p-6">
+          <div className="bg-[#0d111c] rounded-2xl p-4 shadow-2xl border border-slate-800 space-y-2">
             <nav className="space-y-1">
               {filteredNavItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -267,8 +267,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
                       isActive
-                        ? "bg-orange-500/10 text-orange-600 border-l-4 border-orange-500 font-bold"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                        ? "bg-orange-500/15 text-orange-400 border-l-4 border-orange-500 font-bold"
+                        : "text-slate-300 hover:text-white hover:bg-slate-800"
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -277,10 +277,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 );
               })}
             </nav>
-            <div className="pt-4 border-t border-slate-200">
+            <div className="pt-4 border-t border-slate-800">
               <button
                 onClick={() => nextSignOut({ callbackUrl: "/login" })}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-all"
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-all"
               >
                 <LogOut className="h-5 w-5" />
                 Logout
@@ -293,15 +293,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content Area */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl mx-auto w-full">
         {/* Top Navbar Header */}
-        <div className="flex justify-end items-center gap-4 mb-6 pb-4 border-b border-slate-200/80 relative">
+        <div className="flex justify-end items-center gap-4 mb-6 pb-4 border-b border-slate-800/80 relative">
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="bg-white border border-slate-200 hover:border-slate-300 p-2.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all shadow-xs relative cursor-pointer"
+              className="bg-[#0d111c] border border-slate-800 hover:border-slate-700 p-2.5 rounded-xl text-slate-300 hover:text-white transition-all shadow-md relative cursor-pointer"
             >
               <Bell className="h-5 w-5" />
               {activeCalls.length > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce shadow-sm">
+                <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-[#0d111c] animate-bounce shadow-sm">
                   {activeCalls.length}
                 </span>
               )}
@@ -309,13 +309,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Dropdown Menu */}
             {showDropdown && (
-              <div className="absolute right-0 mt-2.5 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-4 space-y-3 animate-in fade-in-50 slide-in-from-top-3 duration-150">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Waiter Calls</h4>
+              <div className="absolute right-0 mt-2.5 w-72 bg-[#0d111c] border border-slate-800 rounded-2xl shadow-2xl z-50 p-4 space-y-3 animate-in fade-in-50 slide-in-from-top-3 duration-150">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Waiter Calls</h4>
                   {activeCalls.length > 0 && (
                     <button
                       onClick={() => setActiveCalls([])}
-                      className="text-[10px] font-bold text-orange-600 hover:underline cursor-pointer"
+                      className="text-[10px] font-bold text-orange-400 hover:underline cursor-pointer"
                     >
                       Clear All
                     </button>
@@ -329,18 +329,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     activeCalls.map((call) => (
                       <div
                         key={call.id}
-                        className="flex justify-between items-center bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs gap-3"
+                        className="flex justify-between items-center bg-slate-900 border border-slate-800 p-2.5 rounded-xl text-xs gap-3"
                       >
                         <div className="space-y-0.5">
-                          <p className="font-extrabold text-slate-900">Table {call.tableNumber}</p>
-                          <p className="text-[9px] text-slate-500 font-semibold">Requested: {call.time}</p>
+                          <p className="font-extrabold text-white">Table {call.tableNumber}</p>
+                          <p className="text-[9px] text-slate-400 font-semibold">Requested: {call.time}</p>
                         </div>
                         <button
                           onClick={() => {
                             setActiveCalls((prev) => prev.filter((c) => c.id !== call.id));
                             toast.success(`Cleared Table ${call.tableNumber} alert`);
                           }}
-                          className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 p-1.5 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
+                          className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 p-1.5 rounded-lg border border-emerald-500/20 transition-colors cursor-pointer"
                         >
                           <Check className="h-3.5 w-3.5" />
                         </button>

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiFetch from "@/lib/api";
-import { Plus, Trash2, Printer, Loader2, TableProperties, Eye, X } from "lucide-react";
+import { Plus, Trash2, Printer, Loader2, TableProperties, Eye, X, RefreshCw, Copy, ExternalLink } from "lucide-react";
 import Card from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
@@ -66,6 +66,20 @@ export default function TablesPage() {
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to delete table");
+    },
+  });
+
+  const regenerateMutation = useMutation({
+    mutationFn: () =>
+      apiFetch("/api/admin/tables/regenerate-qrs", {
+        method: "POST",
+      }),
+    onSuccess: (res: any) => {
+      toast.success(res.message || "QR Codes regenerated to live domain!");
+      queryClient.invalidateQueries({ queryKey: ["admin", "tables"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to regenerate QR codes");
     },
   });
 
@@ -369,13 +383,23 @@ export default function TablesPage() {
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Tables & QR Codes</h1>
           <p className="text-slate-400 mt-1">Manage restaurant seating zones and generate custom order QR templates.</p>
         </div>
-        <Button
-          onClick={() => setShowModal(true)}
-          className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold flex items-center gap-2 shadow-lg shadow-orange-500/10"
-        >
-          <Plus className="h-4 w-4" />
-          Add Table
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => regenerateMutation.mutate()}
+            disabled={regenerateMutation.isPending}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold border border-slate-700 flex items-center gap-2 text-xs"
+          >
+            {regenerateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4 text-orange-400" />}
+            Sync QR Domain (Fix Localhost)
+          </Button>
+          <Button
+            onClick={() => setShowModal(true)}
+            className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold flex items-center gap-2 shadow-lg shadow-orange-500/10 text-xs"
+          >
+            <Plus className="h-4 w-4" />
+            Add Table
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -541,11 +565,33 @@ export default function TablesPage() {
                 <img src={viewingTable.qrUrl} alt="Preview QR" className="h-56 w-56 mx-auto" />
               </div>
               
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <p className="text-sm font-bold text-slate-200">Scan QR to Order</p>
                 <p className="text-xs text-slate-400 max-w-[240px] mx-auto leading-relaxed">
                   Browse the menu, select your dishes and place orders directly from your phone.
                 </p>
+                
+                <div className="pt-2 flex items-center justify-center gap-2">
+                  <a
+                    href={`/tasty-bites/table/${viewingTable.number}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs bg-orange-500/10 border border-orange-500/30 text-orange-400 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-orange-500/20 transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" /> Test Menu View
+                  </a>
+                  <button
+                    onClick={() => {
+                      const domain = process.env.NEXT_PUBLIC_APP_URL || "https://restro-saas-website.vercel.app";
+                      const fullUrl = `${domain}/tasty-bites/table/${viewingTable.number}`;
+                      navigator.clipboard.writeText(fullUrl);
+                      toast.success("Copied QR Menu URL to clipboard!");
+                    }}
+                    className="text-xs bg-slate-800 border border-slate-700 text-slate-300 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-slate-700 transition-colors cursor-pointer"
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Copy URL
+                  </button>
+                </div>
               </div>
             </div>
 
