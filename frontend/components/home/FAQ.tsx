@@ -42,7 +42,7 @@ export default function FAQ() {
             <HelpCircle className="h-3.5 w-3.5" /> Frequently Asked Questions
           </span>
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">
-            Got Questions? We've Got Answers.
+            Got Questions? We&apos;ve Got Answers.
           </h2>
           <p className="text-slate-600 text-base font-medium">
             Everything you need to know about setting up Restro SaaS for your restaurant.

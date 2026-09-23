@@ -1,5 +1,4 @@
 import React from "react";
-import Metadata from "next";
 import Navbar from "@/components/home/Navbar";
 import Features from "@/components/home/Features";
 import CTABanner from "@/components/home/CTABanner";

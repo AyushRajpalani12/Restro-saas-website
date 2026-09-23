@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Star, Quote, UtensilsCrossed } from "lucide-react";
+import { Star, Quote } from "lucide-react";
 
 export default function Testimonials() {
   const reviews = [
@@ -40,10 +40,10 @@ export default function Testimonials() {
             Restaurant Success Stories
           </span>
           <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">
-            Loved by Chefs & Restaurateurs
+            Loved by Chefs &amp; Restaurateurs
           </h2>
           <p className="text-slate-600 text-base font-medium">
-            Here's what dining industry leaders say about switching to Restro SaaS.
+            Here&apos;s what dining industry leaders say about switching to Restro SaaS.
           </p>
         </div>
 
@@ -65,7 +65,7 @@ export default function Testimonials() {
                 <Quote className="h-8 w-8 text-orange-200 mb-3" />
 
                 <p className="text-slate-700 text-sm font-medium leading-relaxed italic">
-                  "{rev.quote}"
+                  &quot;{rev.quote}&quot;
                 </p>
               </div>
 

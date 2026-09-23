@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Smartphone, ChefHat, BellRing, BarChart3, Plus, ShoppingBag, Check, Bell, Sparkles } from "lucide-react";
+import { Smartphone, ChefHat, BellRing, BarChart3, Plus, ShoppingBag, Check, Sparkles } from "lucide-react";
 
 export default function InteractiveDemo() {
   const [activeTab, setActiveTab] = useState<"menu" | "kitchen" | "waiter" | "admin">("menu");
@@ -285,7 +285,7 @@ export default function InteractiveDemo() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                  <p className="text-xs text-slate-400 font-semibold">Today's Revenue</p>
+                  <p className="text-xs text-slate-400 font-semibold">Today&apos;s Revenue</p>
                   <p className="text-2xl font-black text-emerald-400 mt-1">₹42,850</p>
                   <p className="text-[10px] text-emerald-500 font-bold mt-1">+18.5% vs yesterday</p>
                 </div>
