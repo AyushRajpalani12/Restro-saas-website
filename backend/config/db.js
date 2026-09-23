@@ -1,4 +1,11 @@
 const mongoose = require("mongoose");
+const dns = require("dns");
+
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch (err) {
+  // Ignore if custom DNS fails to set
+}
 
 const dbConnect = async () => {
   const MONGODB_URI = process.env.MONGODB_URI;
@@ -8,7 +15,9 @@ const dbConnect = async () => {
   }
 
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 15000,
+    });
     console.log("Connected to MongoDB Atlas successfully");
   } catch (error) {
     console.error("Database connection failure:", error);

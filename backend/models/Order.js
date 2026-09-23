@@ -26,7 +26,7 @@ const OrderSchema = new Schema(
     total: { type: Number, required: true, min: 0 },
     couponCode: { type: String, trim: true },
     paymentStatus: { type: String, enum: ["Pending", "Paid", "Failed"], default: "Pending", index: true },
-    paymentMethod: { type: String, enum: ["Cash", "Card", "UPI", "Razorpay", "Stripe"], default: "Cash" },
+    paymentMethod: { type: String, default: "Cash" },
     items: [{ type: Schema.Types.ObjectId, ref: "OrderItem" }],
     specialInstructions: { type: String },
   },

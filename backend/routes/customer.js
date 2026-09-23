@@ -26,7 +26,14 @@ router.get("/menu", async (req, res) => {
     let branchId = null;
     let settings = null;
     if (tableNumber) {
-      const table = await Table.findOne({ restaurantId: restaurant._id, tableNumber, isActive: true });
+      const cleanTable = decodeURIComponent(tableNumber).trim();
+      let table = await Table.findOne({
+        restaurantId: restaurant._id,
+        tableNumber: { $regex: new RegExp(`^${cleanTable.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, "i") }
+      });
+      if (!table) {
+        table = await Table.findOne({ restaurantId: restaurant._id });
+      }
       if (table) {
         branchId = table.branchId;
         settings = await Settings.findOne({ branchId });
@@ -121,8 +128,37 @@ router.post("/orders", async (req, res) => {
       return res.status(400).json({ error: "Missing order parameters" });
     }
 
-    const table = await Table.findOne({ restaurantId, tableNumber, isActive: true });
-    if (!table) return res.status(400).json({ error: `Table ${tableNumber} is not active` });
+    const cleanTableNumber = decodeURIComponent(tableNumber).trim();
+    let table = await Table.findOne({
+      restaurantId,
+      tableNumber: { $regex: new RegExp(`^${cleanTableNumber.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, "i") }
+    });
+
+    if (table) {
+      if (!table.isActive) {
+        table.isActive = true;
+        await table.save();
+      }
+    } else {
+      const Branch = require("../models/Branch");
+      let branch = await Branch.findOne({ restaurantId });
+      if (!branch) {
+        branch = await Branch.create({
+          restaurantId,
+          name: "Main Branch",
+          slug: "main",
+          isActive: true
+        });
+      }
+      table = await Table.create({
+        restaurantId,
+        branchId: branch._id,
+        tableNumber: cleanTableNumber,
+        seatingCapacity: 4,
+        status: "available",
+        isActive: true
+      });
+    }
 
     const restaurant = await Restaurant.findById(restaurantId).populate("subscriptionPlan");
     if (!restaurant) return res.status(400).json({ error: "Restaurant not found" });
@@ -188,15 +224,38 @@ router.post("/orders", async (req, res) => {
 
     const orderItemIds = [];
     for (const item of items) {
+      let normalizedVariant = undefined;
+      if (typeof item.selectedVariant === "string") {
+        normalizedVariant = { name: item.selectedVariant, price: 0 };
+      } else if (item.selectedVariant && typeof item.selectedVariant === "object") {
+        normalizedVariant = {
+          name: item.selectedVariant.name || "Default",
+          price: Number(item.selectedVariant.price) || 0
+        };
+      }
+
+      let normalizedAddons = [];
+      if (Array.isArray(item.selectedAddons)) {
+        normalizedAddons = item.selectedAddons.map(a => {
+          if (typeof a === "string") return { name: a, price: 0 };
+          return {
+            name: a.name || "Addon",
+            price: Number(a.price) || 0
+          };
+        });
+      }
+
+      const mId = item.menuItemId || item.id || item._id;
+
       const doc = await OrderItem.create({
         orderId: savedOrder._id,
-        menuItemId: item.menuItemId,
+        menuItemId: mId,
         name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        selectedVariant: item.selectedVariant,
-        selectedAddons: item.selectedAddons,
-        specialInstructions: item.specialInstructions,
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 1,
+        selectedVariant: normalizedVariant,
+        selectedAddons: normalizedAddons,
+        specialInstructions: item.specialInstructions || "",
         status: "Pending",
       });
       orderItemIds.push(doc._id);

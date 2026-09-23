@@ -1,5 +1,12 @@
 const mongoose = require("mongoose");
+const dns = require("dns");
 require("dotenv").config();
+
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch (err) {
+  console.warn("Could not set custom DNS servers:", err.message);
+}
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
