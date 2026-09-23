@@ -22,6 +22,9 @@ interface CartState {
   items: CartItem[];
   restaurantSlug: string | null;
   tableNumber: string | null;
+  customerName: string | null;
+  customerPhone: string | null;
+  isVerified: boolean;
   coupon: {
     code: string;
     discountType: "percentage" | "fixed";
@@ -29,6 +32,7 @@ interface CartState {
     minOrderValue: number;
   } | null;
   setSession: (slug: string, table: string) => void;
+  setCustomerDetails: (name: string, phone: string, isVerified: boolean) => void;
   addItem: (item: Omit<CartItem, "id">) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -42,8 +46,28 @@ export const useCart = create<CartState>()(
       items: [],
       restaurantSlug: null,
       tableNumber: null,
+      customerName: null,
+      customerPhone: null,
+      isVerified: false,
       coupon: null,
-      setSession: (slug, table) => set({ restaurantSlug: slug, tableNumber: table }),
+      setSession: (slug, table) => {
+        const currentSlug = get().restaurantSlug;
+        const currentTable = get().tableNumber;
+        if (currentSlug !== slug || currentTable !== table) {
+          set({
+            restaurantSlug: slug,
+            tableNumber: table,
+            customerName: null,
+            customerPhone: null,
+            isVerified: false,
+            items: [],
+            coupon: null,
+          });
+        } else {
+          set({ restaurantSlug: slug, tableNumber: table });
+        }
+      },
+      setCustomerDetails: (name, phone, isVerified) => set({ customerName: name, customerPhone: phone, isVerified }),
       addItem: (item) => {
         const { items } = get();
         const id = `${item.menuItemId}-${item.selectedVariant?.name || ""}-${item.selectedAddons

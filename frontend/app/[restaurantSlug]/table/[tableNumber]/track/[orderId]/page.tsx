@@ -4,23 +4,22 @@ import React, { use, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import apiFetch from "@/lib/api";
 import useSocket from "@/hooks/useSocket";
+import Swal from "sweetalert2";
 import {
-  UtensilsCrossed,
   Clock,
   CheckCircle2,
   ChefHat,
   BellRing,
   ArrowLeft,
   Loader2,
-  DollarSign,
   Receipt,
   HelpCircle,
   Star,
+  Sparkles,
 } from "lucide-react";
 import Card from "@/components/ui/card";
 import Button from "@/components/ui/button";
 import Link from "next/link";
-import toast from "react-hot-toast";
 
 interface OrderItem {
   _id: string;
@@ -102,9 +101,13 @@ export default function OrderTrackingPage({
     // Listen for order status updates
     socket.on("status-changed", (data: any) => {
       playTrackingChime();
-      toast.success(`📢 Order Status Updated: Now ${data.status}!`, {
-        icon: "🍳",
-        duration: 5000,
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "info",
+        title: `📢 Status Updated: ${data.status}`,
+        showConfirmButton: false,
+        timer: 4000,
       });
       queryClient.invalidateQueries({ queryKey: ["customer", "order-tracking", orderId] });
     });
@@ -116,18 +119,23 @@ export default function OrderTrackingPage({
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
-        <Loader2 className="h-10 w-10 text-orange-500 animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] text-slate-500 font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-10 w-10 text-orange-500 animate-spin" />
+          <p className="text-xs font-bold text-slate-500">Loading order tracker...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !response?.success || !order) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 text-center">
-        <HelpCircle className="h-16 w-16 text-slate-800 mb-4 animate-bounce" />
-        <h1 className="text-2xl font-bold text-white mb-2">Order Not Found</h1>
-        <p className="text-slate-400">We couldn&apos;t load the tracking details for this order.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f8fafc] px-4 text-center text-slate-800 font-sans">
+        <div className="h-16 w-16 rounded-3xl bg-orange-50 flex items-center justify-center mb-4">
+          <HelpCircle className="h-8 w-8 text-orange-500 animate-bounce" />
+        </div>
+        <h1 className="text-2xl font-extrabold text-slate-900 mb-2">Order Not Found</h1>
+        <p className="text-slate-500 text-xs max-w-xs">We couldn&apos;t load the tracking details for this order.</p>
       </div>
     );
   }
@@ -135,8 +143,8 @@ export default function OrderTrackingPage({
   // Stepper calculations
   const stages = [
     { name: "Placed", desc: "Chef verifying ticket", icon: Clock },
-    { name: "Preparing", desc: "Dish in chef line", icon: ChefHat },
-    { name: "Ready", desc: "Served soon!", icon: BellRing },
+    { name: "Preparing", desc: "Dish in kitchen line", icon: ChefHat },
+    { name: "Ready", desc: "Serving soon!", icon: BellRing },
     { name: "Completed", desc: "Enjoy your meal!", icon: CheckCircle2 },
   ];
 
@@ -151,50 +159,49 @@ export default function OrderTrackingPage({
   const currentStageIndex = getStageIndex(order.status);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-10 relative overflow-hidden">
-      {/* Background accents */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-orange-500/5 rounded-full blur-[140px]" />
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col pb-10 relative overflow-hidden font-sans">
+      {/* Background soft light ambient glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-xl h-72 bg-gradient-to-b from-orange-100/50 via-amber-50/30 to-transparent pointer-events-none blur-3xl" />
 
       {/* Top Header */}
-      <header className="bg-slate-950/80 backdrop-blur-md border-b border-slate-900/60 p-4 sticky top-0 z-30 flex items-center justify-between">
+      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/80 p-4 sticky top-0 z-30 flex items-center justify-between shadow-xs">
         <Link
           href={`/${restaurantSlug}/table/${tableNumber}`}
-          className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-600 hover:text-slate-900 transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4 text-orange-600" />
           Add More Dishes
         </Link>
-        <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider">
+        <span className="text-xs text-slate-500 font-extrabold uppercase tracking-wider">
           Table {tableNumber} Tracker
         </span>
       </header>
 
       {/* Main Track container */}
-      <main className="max-w-xl mx-auto w-full px-4 mt-8 space-y-6 flex-1">
-        
+      <main className="max-w-xl mx-auto w-full px-4 mt-6 space-y-6 flex-1 z-10">
         {/* Banner */}
-        <div className="text-center space-y-2 py-4">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-bold text-xl shadow-lg shadow-orange-500/10">
+        <div className="text-center space-y-2 py-3">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-extrabold text-2xl shadow-lg shadow-orange-500/20">
             {order.status === "Completed" ? "😋" : "🍳"}
           </div>
           {order.status === "Cancelled" ? (
             <h2 className="text-2xl font-extrabold text-red-500 tracking-tight">Order Cancelled</h2>
           ) : (
-            <h2 className="text-2xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {order.status === "Completed" ? "Order Served!" : "Tracking Order Status..."}
             </h2>
           )}
-          <p className="text-xs text-slate-500 font-medium">
-            Ticket ID: #{order._id.slice(-6).toUpperCase()} • Payment Status: {order.paymentStatus}
+          <p className="text-xs text-slate-500 font-semibold">
+            Ticket ID: #{order._id.slice(-6).toUpperCase()} • Payment Status: <span className="text-slate-900 font-extrabold">{order.paymentStatus}</span>
           </p>
         </div>
 
         {/* Stepper progress (Only if not cancelled and not completed) */}
         {order.status !== "Cancelled" && order.status !== "Completed" && (
-          <Card className="p-6 bg-slate-900/20 border border-slate-850 backdrop-blur-xl">
+          <Card className="p-6 bg-white border border-slate-200/80 rounded-[28px] shadow-sm">
             <div className="relative flex flex-col gap-6">
               {/* Stepper Line */}
-              <div className="absolute left-[17px] top-[14px] bottom-[14px] w-0.5 bg-slate-800" />
+              <div className="absolute left-[17px] top-[14px] bottom-[14px] w-0.5 bg-slate-200" />
               
               {/* Active line filler */}
               {currentStageIndex > 0 && (
@@ -214,25 +221,25 @@ export default function OrderTrackingPage({
                 return (
                   <div key={idx} className="flex items-start gap-4 relative z-10">
                     <div
-                      className={`h-9 w-9 rounded-full flex items-center justify-center border transition-all duration-300 ${
+                      className={`h-9 w-9 rounded-2xl flex items-center justify-center border transition-all duration-300 ${
                         isPassed
-                          ? "bg-orange-500 border-orange-500 text-white shadow shadow-orange-500/10"
+                          ? "bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-500/20"
                           : isCurrent
-                          ? "bg-slate-950 border-orange-500 text-orange-500 animate-pulse"
-                          : "bg-slate-950 border-slate-800 text-slate-600"
+                          ? "bg-white border-orange-500 text-orange-600 animate-pulse shadow-md shadow-orange-500/10"
+                          : "bg-slate-100 border-slate-200 text-slate-400"
                       }`}
                     >
                       <Icon className="h-4.5 w-4.5" />
                     </div>
                     <div>
                       <p
-                        className={`text-sm font-bold transition-colors ${
-                          isPassed || isCurrent ? "text-white" : "text-slate-500"
+                        className={`text-sm font-extrabold transition-colors ${
+                          isPassed || isCurrent ? "text-slate-900" : "text-slate-400"
                         }`}
                       >
                         {stage.name}
                       </p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{stage.desc}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{stage.desc}</p>
                     </div>
                   </div>
                 );
@@ -243,10 +250,10 @@ export default function OrderTrackingPage({
 
         {/* Feedback Card (Only if Completed) */}
         {order.status === "Completed" && (
-          <Card className="p-6 bg-slate-900/40 border border-orange-500/25 backdrop-blur-xl shadow-lg shadow-orange-500/5 text-center space-y-5 animate-in fade-in duration-300">
+          <Card className="p-6 bg-white border border-orange-200/80 rounded-[28px] shadow-sm text-center space-y-5">
             <div className="space-y-1">
-              <h3 className="text-xl font-bold text-white">How was your dining experience?</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-lg font-extrabold text-slate-900">How was your dining experience?</h3>
+              <p className="text-xs text-slate-500">
                 Hey {order.customerName || "there"}, please rate your meal and service.
               </p>
             </div>
@@ -267,8 +274,8 @@ export default function OrderTrackingPage({
                       <Star
                         className={`h-8 w-8 transition-colors ${
                           star <= (hoverRating || rating)
-                            ? "fill-amber-500 text-amber-500"
-                            : "text-slate-700"
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-slate-200"
                         }`}
                       />
                     </button>
@@ -281,7 +288,7 @@ export default function OrderTrackingPage({
                     placeholder="Write a message or suggestion (Optional)..."
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
-                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-205 placeholder-slate-600 focus:outline-none focus:border-orange-500/50 resize-none min-h-[70px]"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-orange-500 resize-none min-h-[70px]"
                     rows={3}
                   />
                 </div>
@@ -290,7 +297,11 @@ export default function OrderTrackingPage({
                   onClick={async () => {
                     if (!order) return;
                     if (rating === 0) {
-                      toast.error("Please select a star rating");
+                      Swal.fire({
+                        icon: "warning",
+                        title: "Rating Required",
+                        text: "Please select a star rating before submitting.",
+                      });
                       return;
                     }
                     try {
@@ -310,24 +321,38 @@ export default function OrderTrackingPage({
                         }),
                       });
                       setFeedbackSubmitted(true);
-                      toast.success("Thank you for your feedback!");
+                      Swal.fire({
+                        icon: "success",
+                        title: "Thank You!",
+                        text: "Your feedback has been submitted successfully.",
+                        timer: 2000,
+                        showConfirmButton: false,
+                      });
                     } catch (err: any) {
-                      toast.error(err.message || "Failed to submit feedback");
+                      Swal.fire({
+                        icon: "error",
+                        title: "Submission Failed",
+                        text: err.message || "Failed to submit feedback",
+                      });
                     }
                   }}
-                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-2 rounded-xl text-xs shadow-md shadow-orange-500/10"
+                  className="w-full text-white font-extrabold py-3 rounded-2xl text-xs shadow-md border-none"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, #ea580c, #f97316)`,
+                    boxShadow: `0 6px 20px -4px rgba(234, 88, 12, 0.35)`,
+                  }}
                 >
                   Submit Review
                 </Button>
               </div>
             ) : (
-              <div className="py-4 space-y-3 animate-in zoom-in-95 duration-200">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+              <div className="py-4 space-y-3">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-bold text-white">Feedback Submitted!</p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-sm font-extrabold text-slate-900">Feedback Submitted!</p>
+                  <p className="text-xs text-slate-500">
                     We appreciate your response. Have a great day!
                   </p>
                 </div>
@@ -337,52 +362,52 @@ export default function OrderTrackingPage({
         )}
 
         {/* Order Details Invoice card */}
-        <Card className="bg-slate-900/20 border border-slate-850 backdrop-blur-xl rounded-2xl overflow-hidden shadow-lg">
-          <div className="p-4 bg-slate-950/40 border-b border-slate-900 flex justify-between items-center">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Receipt className="h-4 w-4 text-orange-500" /> Bill Summary
+        <Card className="bg-white border border-slate-200/80 rounded-[28px] overflow-hidden shadow-sm">
+          <div className="p-4 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Receipt className="h-4 w-4 text-orange-600" /> Bill Summary
             </h3>
-            <span className="text-[10px] text-slate-500 font-bold">Dine-in Order</span>
+            <span className="text-[11px] text-slate-500 font-bold">Dine-in Order</span>
           </div>
 
-          <div className="p-5 divide-y divide-slate-900 space-y-3.5">
+          <div className="p-5 divide-y divide-slate-100 space-y-3.5">
             {/* Items */}
             <div className="space-y-3 pb-3.5">
               {order.items.map((item) => (
                 <div key={item._id} className="flex justify-between text-xs">
                   <div>
-                    <p className="font-extrabold text-slate-200">
+                    <p className="font-extrabold text-slate-900">
                       {item.quantity}x {item.name}
                     </p>
                     {item.selectedVariant && (
-                      <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Portion: {item.selectedVariant}</p>
+                      <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Portion: {item.selectedVariant}</p>
                     )}
                     {item.selectedAddons?.length > 0 && (
-                      <p className="text-[10px] text-orange-500/70 font-semibold mt-0.5">
+                      <p className="text-[11px] text-orange-600 font-semibold mt-0.5">
                         + {item.selectedAddons.map((a) => a.name).join(", ")}
                       </p>
                     )}
                   </div>
-                  <span className="font-extrabold text-slate-350 shrink-0">₹{item.price * item.quantity}</span>
+                  <span className="font-extrabold text-slate-900 shrink-0">₹{item.price * item.quantity}</span>
                 </div>
               ))}
             </div>
 
             {/* Calculations */}
-            <div className="text-xs space-y-2 pt-3.5 text-slate-400">
+            <div className="text-xs space-y-2 pt-3.5 text-slate-600">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span className="font-semibold text-slate-300">₹{order.subtotal}</span>
+                <span className="font-extrabold text-slate-900">₹{order.subtotal}</span>
               </div>
               {order.cgst > 0 && (
                 <div className="flex justify-between">
                   <span>Taxes (5% GST):</span>
-                  <span className="font-semibold text-slate-300">₹{(order.cgst + order.sgst).toFixed(1)}</span>
+                  <span className="font-extrabold text-slate-900">₹{(order.cgst + order.sgst).toFixed(1)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-slate-900">
+              <div className="flex justify-between text-sm font-black text-slate-900 pt-2.5 border-t border-slate-200">
                 <span>Total Amount paid:</span>
-                <span className="text-orange-500">₹{order.total.toFixed(0)}</span>
+                <span className="text-orange-600">₹{order.total.toFixed(0)}</span>
               </div>
             </div>
           </div>
