@@ -182,16 +182,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     : currentNavItem?.name;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col md:flex-row font-sans">
       {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex flex-col w-64 border-r border-slate-900 bg-slate-900/30 backdrop-blur-xl p-6 shrink-0">
+      <aside className="hidden md:flex flex-col w-64 border-r border-slate-200 bg-white/90 backdrop-blur-xl p-6 shrink-0 shadow-sm">
         <div className="flex items-center gap-3 mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-bold text-xl shadow-md">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-black text-xl shadow-md shadow-orange-500/20">
             R
           </div>
           <div>
-            <h1 className="font-extrabold text-white text-lg tracking-tight truncate max-w-[150px]">{restaurantName}</h1>
-            <p className="text-xs text-orange-500/85 font-semibold uppercase tracking-wider">Tenant Node</p>
+            <h1 className="font-extrabold text-slate-900 text-lg tracking-tight truncate max-w-[150px]">{restaurantName}</h1>
+            <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wider">Tenant Node</p>
           </div>
         </div>
 
@@ -203,32 +203,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-250 ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   isActive
-                    ? "bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-l-2 border-orange-500 text-orange-500 font-bold"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
+                    ? "bg-orange-500/10 border-l-4 border-orange-500 text-orange-600 font-bold shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${isActive ? "text-orange-500" : "text-slate-400"}`} />
+                <Icon className={`h-5 w-5 ${isActive ? "text-orange-600" : "text-slate-400"}`} />
                 {item.name}
               </Link>
             );
           })}
         </nav>
 
-        <div className="mt-auto pt-6 border-t border-slate-900">
+        <div className="mt-auto pt-6 border-t border-slate-200">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-350">
+            <div className="h-8 w-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
               <User className="h-4 w-4" />
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-semibold text-white truncate">{session.user?.name}</p>
+              <p className="text-xs font-bold text-slate-900 truncate">{session.user?.name}</p>
               <p className="text-[10px] text-slate-500 truncate">{session.user?.email}</p>
             </div>
           </div>
           <button
             onClick={() => nextSignOut({ callbackUrl: "/login" })}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-all duration-200 cursor-pointer"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200 cursor-pointer"
           >
             <LogOut className="h-5 w-5" />
             Logout
@@ -237,16 +237,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Mobile Top Header */}
-      <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-900 bg-slate-900/30 backdrop-blur-xl z-20">
+      <header className="md:hidden flex items-center justify-between p-4 border-b border-slate-200 bg-white/90 backdrop-blur-xl z-20 shadow-xs">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-bold text-lg shadow-sm">
             R
           </div>
-          <span className="font-extrabold text-white text-base tracking-tight">{restaurantName}</span>
+          <span className="font-extrabold text-slate-900 text-base tracking-tight">{restaurantName}</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 text-slate-400 hover:text-white transition-colors"
+          className="p-2 text-slate-600 hover:text-slate-900 transition-colors"
         >
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -254,36 +254,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-10 bg-slate-950/80 backdrop-blur-lg pt-16 flex flex-col p-6">
-          <nav className="space-y-2 flex-1">
-            {filteredNavItems.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                    isActive
-                      ? "bg-orange-500/10 text-orange-500 border-l-2 border-orange-500"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="pt-6 border-t border-slate-900">
-            <button
-              onClick={() => nextSignOut({ callbackUrl: "/login" })}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-all"
-            >
-              <LogOut className="h-5 w-5" />
-              Logout
-            </button>
+        <div className="md:hidden fixed inset-0 z-10 bg-slate-900/40 backdrop-blur-md pt-16 flex flex-col p-6">
+          <div className="bg-white rounded-2xl p-4 shadow-xl border border-slate-200 space-y-2">
+            <nav className="space-y-1">
+              {filteredNavItems.map((item) => {
+                const isActive = pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                      isActive
+                        ? "bg-orange-500/10 text-orange-600 border-l-4 border-orange-500 font-bold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="pt-4 border-t border-slate-200">
+              <button
+                onClick={() => nextSignOut({ callbackUrl: "/login" })}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-all"
+              >
+                <LogOut className="h-5 w-5" />
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -291,15 +293,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content Area */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl mx-auto w-full">
         {/* Top Navbar Header */}
-        <div className="flex justify-end items-center gap-4 mb-6 pb-4 border-b border-slate-900/40 relative">
+        <div className="flex justify-end items-center gap-4 mb-6 pb-4 border-b border-slate-200/80 relative">
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="bg-slate-900 border border-slate-850 hover:bg-slate-850 p-2.5 rounded-xl text-slate-400 hover:text-white transition-all shadow-md relative cursor-pointer"
+              className="bg-white border border-slate-200 hover:border-slate-300 p-2.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all shadow-xs relative cursor-pointer"
             >
               <Bell className="h-5 w-5" />
               {activeCalls.length > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-slate-950 animate-bounce">
+                <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-bold h-5 w-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce shadow-sm">
                   {activeCalls.length}
                 </span>
               )}
@@ -307,13 +309,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Dropdown Menu */}
             {showDropdown && (
-              <div className="absolute right-0 mt-2.5 w-72 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-4 space-y-3 animate-in fade-in-50 slide-in-from-top-3 duration-150">
-                <div className="flex justify-between items-center border-b border-slate-850 pb-2">
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Waiter Calls</h4>
+              <div className="absolute right-0 mt-2.5 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-4 space-y-3 animate-in fade-in-50 slide-in-from-top-3 duration-150">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Waiter Calls</h4>
                   {activeCalls.length > 0 && (
                     <button
                       onClick={() => setActiveCalls([])}
-                      className="text-[10px] font-bold text-orange-500 hover:underline cursor-pointer"
+                      className="text-[10px] font-bold text-orange-600 hover:underline cursor-pointer"
                     >
                       Clear All
                     </button>
@@ -322,15 +324,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 <div className="max-h-60 overflow-y-auto space-y-2">
                   {activeCalls.length === 0 ? (
-                    <p className="text-xs text-slate-500 py-4 text-center">No active service calls.</p>
+                    <p className="text-xs text-slate-400 py-4 text-center">No active service calls.</p>
                   ) : (
                     activeCalls.map((call) => (
                       <div
                         key={call.id}
-                        className="flex justify-between items-center bg-slate-950/60 border border-slate-850/50 p-2.5 rounded-xl text-xs gap-3"
+                        className="flex justify-between items-center bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs gap-3"
                       >
                         <div className="space-y-0.5">
-                          <p className="font-extrabold text-white">Table {call.tableNumber}</p>
+                          <p className="font-extrabold text-slate-900">Table {call.tableNumber}</p>
                           <p className="text-[9px] text-slate-500 font-semibold">Requested: {call.time}</p>
                         </div>
                         <button
@@ -338,7 +340,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             setActiveCalls((prev) => prev.filter((c) => c.id !== call.id));
                             toast.success(`Cleared Table ${call.tableNumber} alert`);
                           }}
-                          className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 p-1.5 rounded-lg border border-emerald-500/25 transition-colors cursor-pointer"
+                          className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 p-1.5 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
                         >
                           <Check className="h-3.5 w-3.5" />
                         </button>
@@ -354,31 +356,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 max-w-lg mx-auto py-12">
             <div className="relative mb-6 animate-pulse">
               <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-full scale-125" />
-              <div className="relative bg-slate-900 border border-slate-800 p-6 rounded-3xl text-orange-500 shadow-2xl">
+              <div className="relative bg-white border border-slate-200 p-6 rounded-3xl text-orange-600 shadow-xl">
                 <Lock className="h-12 w-12" />
               </div>
             </div>
-            <h2 className="text-2xl font-black text-white tracking-tight mb-2">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">
               Feature is Locked
             </h2>
-            <p className="text-sm text-slate-400 leading-relaxed mb-6">
-              Your subscription plan (<span className="text-orange-400 font-semibold">{planName}</span>) does not include access to <span className="text-white font-bold">{lockedFeatureName}</span>. Please upgrade your plan to unlock this module.
+            <p className="text-sm text-slate-600 leading-relaxed mb-6">
+              Your subscription plan (<span className="text-orange-600 font-semibold">{planName}</span>) does not include access to <span className="text-slate-900 font-bold">{lockedFeatureName}</span>. Please upgrade your plan to unlock this module.
             </p>
-            <div className="w-full bg-slate-900/40 border border-slate-850 backdrop-blur-md rounded-2xl p-5 mb-8 text-left space-y-3">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Zap className="h-3.5 w-3.5 text-orange-500" /> Why upgrade?
+            <div className="w-full bg-white border border-slate-200 backdrop-blur-md rounded-2xl p-5 mb-8 text-left space-y-3 shadow-xs">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Zap className="h-3.5 w-3.5 text-orange-600" /> Why upgrade?
               </h4>
-              <ul className="text-xs text-slate-400 space-y-2">
+              <ul className="text-xs text-slate-600 space-y-2">
                 <li className="flex items-start gap-2">
-                  <span className="text-orange-500">•</span>
+                  <span className="text-orange-600 font-bold">•</span>
                   <span>Access advanced automation & staff tools.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-orange-500">•</span>
+                  <span className="text-orange-600 font-bold">•</span>
                   <span>Scale your operations with higher limits.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-orange-500">•</span>
+                  <span className="text-orange-600 font-bold">•</span>
                   <span>Enable complete system synchronization.</span>
                 </li>
               </ul>
@@ -386,7 +388,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
               <Button
                 onClick={() => router.push("/admin/dashboard")}
-                className="bg-slate-900 border border-slate-850 hover:bg-slate-800 text-slate-300 font-semibold px-6 py-2.5 rounded-xl cursor-pointer"
+                className="bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold px-6 py-2.5 rounded-xl cursor-pointer shadow-xs"
               >
                 Go to Dashboard
               </Button>
@@ -394,7 +396,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 onClick={() => {
                   toast.success("Upgrade inquiry sent to Super Admin!");
                 }}
-                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-orange-500/10 cursor-pointer"
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-6 py-2.5 rounded-xl shadow-md shadow-orange-500/20 cursor-pointer"
               >
                 Upgrade Plan
               </Button>

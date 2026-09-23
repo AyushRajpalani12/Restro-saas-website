@@ -98,7 +98,7 @@ export default function TablesPage() {
         <head>
           <title>Table ${tNum} QR Code</title>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap');
             body {
               display: flex;
               flex-direction: column;
@@ -106,7 +106,7 @@ export default function TablesPage() {
               justify-content: center;
               height: 100vh;
               margin: 0;
-              font-family: 'Outfit', sans-serif;
+              font-family: 'Plus Jakarta Sans', sans-serif;
               background-color: #ffffff;
               color: #0f172a;
             }
@@ -130,7 +130,7 @@ export default function TablesPage() {
               letter-spacing: 0.15em;
               margin-bottom: 12px;
               text-transform: uppercase;
-              font-family: 'Outfit', sans-serif;
+              font-family: 'Plus Jakarta Sans', sans-serif;
             }
             .badge {
               background-color: #ea580c;
@@ -244,11 +244,11 @@ export default function TablesPage() {
         <head>
           <title>All Table QR Codes - ${restName}</title>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800;900&display=swap');
             body {
               margin: 0;
               padding: 0;
-              font-family: 'Outfit', sans-serif;
+              font-family: 'Plus Jakarta Sans', sans-serif;
               background-color: #ffffff;
               color: #0f172a;
             }
