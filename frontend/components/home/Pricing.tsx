@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Check, Sparkles, Zap } from "lucide-react";
 
 export default function Pricing() {
@@ -40,7 +41,7 @@ export default function Pricing() {
         "Real-Time Revenue Analytics",
         "Priority 24/7 Support",
       ],
-      cta: "Request Pro Access",
+      cta: "Start Free Trial",
       href: "/register?plan=pro",
     },
     {
@@ -63,16 +64,26 @@ export default function Pricing() {
   ];
 
   return (
-    <section id="pricing" className="py-24 bg-white border-y border-slate-200 relative">
+    <section id="pricing" className="py-24 bg-white border-y border-slate-200 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <span className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider">
+          <motion.span
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider"
+          >
             Simple & Transparent Pricing
-          </span>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight">
+          </motion.span>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight"
+          >
             Flexible Plans for Every Restaurant
-          </h2>
+          </motion.h2>
           <p className="text-slate-600 text-base font-medium">
             No hidden commissions. No surprise setup fees. Cancel or upgrade anytime.
           </p>
@@ -104,8 +115,12 @@ export default function Pricing() {
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 items-stretch">
           {plans.map((plan, idx) => (
-            <div
+            <motion.div
               key={idx}
+              initial={{ opacity: 0, y: 25 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
               className={`rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 relative ${
                 plan.popular
                   ? "bg-slate-900 text-white border-2 border-orange-500 shadow-2xl shadow-orange-500/15 scale-105"
@@ -159,7 +174,7 @@ export default function Pricing() {
                   <Zap className="h-3.5 w-3.5" />
                 </Link>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

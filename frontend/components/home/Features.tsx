@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion } from "framer-motion";
 import {
   Smartphone,
   ChefHat,
@@ -69,15 +70,32 @@ export default function Features() {
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <span className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider">
-            <Sparkles className="h-3.5 w-3.5" /> Powerful Capabilities
-          </span>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-            Engineered for Modern Dining & High-Volume Kitchens
-          </h2>
-          <p className="text-slate-600 text-base font-medium leading-relaxed">
-            Everything your restaurant needs to boost table turnover, reduce order entry mistakes, and elevate guest satisfaction.
-          </p>
+          <motion.span
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 text-xs font-black px-3.5 py-1.5 rounded-full uppercase tracking-wider"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Complete Platform Capabilities
+          </motion.span>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight"
+          >
+            Engineered for High-Volume Restaurant Operations
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-slate-600 text-base font-medium leading-relaxed"
+          >
+            Everything your restaurant needs to boost table turnover, eliminate order entry errors, and elevate customer dining experiences.
+          </motion.p>
         </div>
 
         {/* Feature Cards Grid */}
@@ -85,14 +103,18 @@ export default function Features() {
           {featuresList.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <div
+              <motion.div
                 key={index}
-                className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-300 transition-all duration-300 flex flex-col justify-between group"
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.08 }}
+                className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-300 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
               >
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center border ${feature.color}`}>
-                      <Icon className="h-6 w-6" />
+                    <div className={`h-14 w-14 rounded-2xl flex items-center justify-center border ${feature.color} group-hover:scale-110 transition-transform`}>
+                      <Icon className="h-7 w-7" />
                     </div>
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
                       {feature.badge}
@@ -112,7 +134,7 @@ export default function Features() {
                   <span>Explore module</span>
                   <CheckCircle2 className="h-4 w-4 ml-1 text-orange-500" />
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

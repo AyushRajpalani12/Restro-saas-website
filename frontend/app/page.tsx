@@ -3,6 +3,9 @@ import Navbar from "@/components/home/Navbar";
 import Hero from "@/components/home/Hero";
 import StatsBar from "@/components/home/StatsBar";
 import Features from "@/components/home/Features";
+import QROrderingFlow from "@/components/home/QROrderingFlow";
+import KDSShowcase from "@/components/home/KDSShowcase";
+import WaiterAlertShowcase from "@/components/home/WaiterAlertShowcase";
 import InteractiveDemo from "@/components/home/InteractiveDemo";
 import HowItWorks from "@/components/home/HowItWorks";
 import Pricing from "@/components/home/Pricing";
@@ -13,7 +16,7 @@ import Footer from "@/components/home/Footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-orange-500 selection:text-white">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans selection:bg-orange-500 selection:text-white overflow-x-hidden">
       {/* Sticky Header Navigation */}
       <Navbar />
 
@@ -22,6 +25,9 @@ export default function Home() {
         <Hero />
         <StatsBar />
         <Features />
+        <QROrderingFlow />
+        <KDSShowcase />
+        <WaiterAlertShowcase />
         <InteractiveDemo />
         <HowItWorks />
         <Pricing />
